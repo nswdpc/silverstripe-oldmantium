@@ -7,27 +7,28 @@ use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Purge cache by tag or tags
+ * Note: requires a CF Enterprise account
  * @author James Ellis <james.ellis@dpc.nsw.gov.au>
  */
 class TagCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by tag(s)');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by tag(s)');
     }
     /**
      * Process the job
      */
     public function process() {
-        $record = $this->getObject('Record');
-        $result = false;
-        if($record && $record instanceof Purgeable) {
-            $urls = $record->getPurgeValues();
-            if(!empty($urls['tags'])) {
-                $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeTags($urls['tags']);
-            }
+        try {
+            $values = $this->checkRecordForErrors('tags');
+            $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeTags($values['tags']);
+            $this->checkPurgeResult();
+        } catch (\Exception $e) {
+            Logger::log("Cloudflare: failed to purge tags with error=" . $e->getMessage());
+            $this->isComplete = false;
         }
-        return $result;
+        return false;
     }
 
 }

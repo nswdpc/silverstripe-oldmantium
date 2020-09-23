@@ -33,6 +33,7 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
             $adapter = new Guzzle($key);
             $zones = new Zones( $adapter );
             $zone_id = $client->getZoneIdentifier();
+            Logger::log("Cloudflare: purging all from zone {$zone_id}");
             $result = $zones->cachePurge( $zone_id );
             if($result) {
                 $this->addMessage("Purged all in zone {$zone_id}");

@@ -28,7 +28,7 @@ class DataObjectPurgeable extends DataExtension {
 
     public function updateCMSFields(FieldList $fields)
     {
-        $fields->addFieldToTab(
+        $fields->addFieldsToTab(
             'Root.Cloudflare', [
                 DatetimeField::create(
                     'CachePurgeAt',
@@ -98,6 +98,7 @@ class DataObjectPurgeable extends DataExtension {
     public function onAfterWrite()
     {
         if (!$this->owner->hasExtension(Versioned::class)) {
+            Logger::log("Cloudflare: creating jobs for reason=write");
             $this->owner->createPurgeJobs('write');
         }
     }

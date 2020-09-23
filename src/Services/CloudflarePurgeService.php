@@ -6,7 +6,6 @@ use Cloudflare\API\Auth\APIKey;
 use Cloudflare\API\Adapter\Guzzle;
 use Cloudflare\API\Endpoints\Zones;
 use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
-use SilverStripe\Core\Injector\Injector;
 use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\Cloudflare\CloudflareResult;
 
@@ -61,6 +60,7 @@ class CloudflarePurgeService extends Cloudflare {
             $start->modify("+1 {$delay} hours");
         }
         $result = false;
+        Logger::log("Cloudflare: purging all (via job)");
         if($job_id = QueuedJobService::singleton()->queueJob(
                         $job,
                         $start->format('Y-m-d H:i:s')
@@ -81,6 +81,7 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
         $zones = new Zones( $this->getSdkClient() );
+        Logger::log("Cloudflare: purging tags " . implode(",", $tags));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
             null, // hosts
@@ -99,6 +100,7 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
         $zones = new Zones( $this->getSdkClient() );
+        Logger::log("Cloudflare: purging hosts " . implode(",", $hosts));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
             null, // files
@@ -117,6 +119,7 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
         $zones = new Zones( $this->getSdkClient() );
+        Logger::log("Cloudflare: purging files " . implode(",", $files));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
             $files, // files
@@ -139,6 +142,7 @@ class CloudflarePurgeService extends Cloudflare {
             $options = [
                 'prefixes' => $prefixes
             ];
+            Logger::log("Cloudflare: purging prefixes " . implode(",", $prefixes));
             $user = $adapter->post('zones/' . $this->getZoneIdentifier() . '/purge_cache', $options);
             $body = json_decode($user->getBody());
             $result = isset($body->result->id);
@@ -150,19 +154,12 @@ class CloudflarePurgeService extends Cloudflare {
     }
 
     /**
-     * Attempt to return an instance of the job related to the Task
-     * @param string $type being one of the PurgeRecord::TYPE_ constants
-     * @return AbstractRecordCachePurgeJob|false
+     * Get the option for the type
      */
-    public static function getJobForType($type) {
-        $class = "NSWDPC\\Utilities\\Cloudflare\\{$type}CachePurgeJob";
-        if(class_exists($class)) {
-            $job = Injector::inst()->get($class);
-            if($job instanceof AbstractRecordCachePurgeJob) {
-                return $job;
-            }
-        }
-        return false;
+    public static function getOptionForType($type) {
+        $mappings = self::getTypeMappings();
+        $key = array_search ( $type , $mappings );
+        return $key;
     }
 
     /**

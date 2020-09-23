@@ -7,27 +7,28 @@ use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Purge cache by prefix or prefixes
+ * Note: requires a CF Enterprise account
  * @author James Ellis <james.ellis@dpc.nsw.gov.au>
  */
 class PrefixCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by prefix(es)');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by prefix(es)');
     }
     /**
      * Process the job
      */
     public function process() {
-        $record = $this->getObject('Record');
-        $result = false;
-        if($record && $record instanceof Purgeable) {
-            $urls = $record->getPurgeValues();
-            if(!empty($urls['prefixes'])) {
-                $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgePrefixes($urls['prefixes']);
-            }
+        try {
+            $values = $this->checkRecordForErrors('prefixes');
+            $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgePrefixes($values['prefixes']);
+            $this->checkPurgeResult();
+        } catch (\Exception $e) {
+            Logger::log("Cloudflare: failed to purge prefixes with error=" . $e->getMessage());
+            $this->isComplete = false;
         }
-        return $result;
+        return false;
     }
 
 }

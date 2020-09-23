@@ -12,7 +12,7 @@ class ExpiryCachePurgeJob extends URLCachePurgeJob
 {
 
     public function getTitle() {
-        return _t(__CLASS__ . '.JOB_TITLE', 'Purge Cloudflare cache on expiry job');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by urls(s) on record expiry');
     }
 
     /**

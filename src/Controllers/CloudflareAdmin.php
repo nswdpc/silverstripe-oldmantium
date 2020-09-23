@@ -15,6 +15,6 @@ class CloudflareAdmin extends ModelAdmin
     private static $menu_title = 'Cloudflare';
     private static $menu_icon_class = 'font-icon-globe';
     private static $managed_models = [
-        URL::class
+        PurgeRecord::class
     ];
 }

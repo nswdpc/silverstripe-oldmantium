@@ -9,5 +9,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 interface Purgeable {
     public function getPurgeValues();
     public function getPurgeTypes();
+    public function getPurgeRecordName();
     public function getPurgeTypeValues($type);
 }

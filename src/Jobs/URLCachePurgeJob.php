@@ -7,29 +7,28 @@ use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Job purges assocaited record URLs
- * @todo delete other jobs for this record (e.g 1-1 record-active job relation)
  * @author James Ellis <james.ellis@dpc.nsw.gov.au>
  */
 class URLCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return _t(__CLASS__ . '.JOB_TITLE', 'Record Cloudflare cache purge job');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by url(s)');
     }
 
     /**
      * Process the job
      */
     public function process() {
-        $record = $this->getObject('Record');
-        $result = false;
-        if($record && $record instanceof Purgeable) {
-            $urls = $record->getPurgeUrls();
-            if(!empty($urls['files'])) {
-                $result = Injector::inst()->get(Cloudflare::class)->purgeFiles($urls['files']);
-            }
+        try {
+            $values = $this->checkRecordForErrors('files');
+            $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeFiles($values['files']);
+            $this->checkPurgeResult();
+        } catch (\Exception $e) {
+            Logger::log("Cloudflare: failed to purge files (urls) with error=" . $e->getMessage());
+            $this->isComplete = false;
         }
-        return $result;
+        return false;
     }
 
 
