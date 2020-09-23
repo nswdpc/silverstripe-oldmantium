@@ -23,8 +23,7 @@ class HostCachePurgeJob extends AbstractRecordCachePurgeJob
     public function process() {
         try {
             $values = $this->checkRecordForErrors('hosts');
-            $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeHosts($values['hosts']);
-            $this->checkPurgeResult();
+            $this->checkPurgeResult(Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeHosts($values['hosts']));
         } catch (\Exception $e) {
             Logger::log("Cloudflare: failed to purge hosts with error=" . $e->getMessage());
             $this->isComplete = false;

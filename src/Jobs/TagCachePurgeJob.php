@@ -22,8 +22,7 @@ class TagCachePurgeJob extends AbstractRecordCachePurgeJob
     public function process() {
         try {
             $values = $this->checkRecordForErrors('tags');
-            $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeTags($values['tags']);
-            $this->checkPurgeResult();
+            $this->checkPurgeResult(Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeTags($values['tags']));
         } catch (\Exception $e) {
             Logger::log("Cloudflare: failed to purge tags with error=" . $e->getMessage());
             $this->isComplete = false;

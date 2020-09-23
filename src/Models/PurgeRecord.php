@@ -4,11 +4,13 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use gorriecoe\LinkField\LinkField;
 use gorriecoe\Link\Models\Link;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
+use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\MultiValueField\Fields\MultiValueListField;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
 use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;
@@ -36,11 +38,19 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
 
     private static $summary_fields = [
         'Type' => 'Type',
-        'TypeValues' => 'Values',
+        'TypeValues.csv' => 'Values',
     ];
 
     public function getTitle() {
-        return ($this->Type ? ($this->Type . " - " . (implode(",", $this->getPurgeTypeValues($this->Type)))) : '');
+        $values = [];
+        if($this->Type) {
+            $values = $this->getPurgeTypeValues($this->Type);
+        }
+        $title =$this->Type;
+        if(is_array($values)) {
+            $title .= " - " . implode(",", $values);
+        }
+        return $title;
     }
 
     /**
@@ -60,6 +70,14 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
         }
         return $result;
     }
+
+    protected function getClient() {
+        $service = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS);
+        $client = $service->getSdkClient();
+        print "<pre>";
+        print_r($client);exit;
+    }
+
 
     public function getCMSFields()
     {
@@ -107,7 +125,7 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
      * @return array
      */
     public function getPurgeTypeValues($type) {
-        if($type == $this->Type && $this->TypeValues) {
+        if($type == $this->Type && ($type_values = $this->getField('TypeValues'))) {
             return $this->TypeValues->getValue();
         }
     }
@@ -120,17 +138,18 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
     {
         parent::onBeforeWrite();
 
-        if($this->isChanged('Type')) {
+        if($this->exists() && $this->isChanged('Type')) {
             Logger::log("Cloudflare: remove values as type changed in PurgeRecord");
             $this->TypeValues = '';
         }
 
         if($this->isChanged('CacheMaxAge')
             || $this->isChanged('CachePurgeAt')
-            || $this->isChanged('URL') // (if the URL is changed !)
         ) {
+            // TODO
+
             // handle options
-            // first delete any jobs that are active
+            // first delete any jobs that are active for this record
 
             // if there is no URL don't add a new job
 

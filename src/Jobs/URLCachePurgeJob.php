@@ -21,9 +21,10 @@ class URLCachePurgeJob extends AbstractRecordCachePurgeJob
      */
     public function process() {
         try {
+            Logger::log("Cloudflare: URL purging");
             $values = $this->checkRecordForErrors('files');
-            $result = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeFiles($values['files']);
-            $this->checkPurgeResult();
+            Logger::log("Cloudflare: URL purging - checking");
+            $this->checkPurgeResult(Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeURLs($values['files']));
         } catch (\Exception $e) {
             Logger::log("Cloudflare: failed to purge files (urls) with error=" . $e->getMessage());
             $this->isComplete = false;

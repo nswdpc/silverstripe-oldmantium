@@ -6,6 +6,8 @@ use Cloudflare\API\Auth\APIKey;
 use Cloudflare\API\Adapter\Guzzle;
 use Cloudflare\API\Endpoints\Zones;
 use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
+use SilverStripe\Control\Director;
+use SilverStripe\Control\Controller;
 use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\Cloudflare\CloudflareResult;
 
@@ -49,6 +51,7 @@ class CloudflarePurgeService extends Cloudflare {
     /**
      * Purge all from zone by creating a cache purge job in the future (which handles the purging)
      * The idea here is that job will be created in the future with a configured delay (hrs)
+     * This allows job cancellation and manual actioning
      * @return CloudflareResult|null
      */
     public function purgeAll()
@@ -111,22 +114,54 @@ class CloudflarePurgeService extends Cloudflare {
     }
 
     /**
-     * Purge cache by hosts immediately using cloudflare/sdk
+     * Purge cache by urls immediately using cloudflare/sdk
+     * This method modifies the URLs provided to ensure they are absolute URLs
      * @return CloudflareResult|false
      */
-    public function purgeFiles(array $files) {
-        if(empty($files)) {
+    public function purgeURLs(array $urls) {
+
+        if(empty($urls)) {
+            Logger::log("Cloudflare: no URLs to purge");
             return false;
         }
+
+        $purge_urls = [];
+        $base_url = $this->config()->get('base_url');
+        if (!$base_url) {
+            $base_url = Director::absoluteBaseURL();
+        }
+
+        foreach($urls as $url) {
+            $parts = parse_url($url);
+            $is_absolute = false;
+            if(isset($parts['scheme']) && isset($parts['host'])) {
+                // URL has a scheme and host, treat as absolute
+                $purge_urls[] = $url;
+            } else {
+                $purge_urls[] = Controller::join_links($base_url, $url);
+            }
+        }
+
         $zones = new Zones( $this->getSdkClient() );
-        Logger::log("Cloudflare: purging files " . implode(",", $files));
+        foreach($purge_urls as $purge_url) {
+            Logger::log("Cloudflare: purging {$purge_url}");
+        }
+
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
-            $files, // files
+            $purge_urls, // 'files'
             null, // tags
             null  //hosts
         );
-        return $this->result($zones->getBody(), $result, $hosts);
+        Logger::log("Cloudflare: purge request finished");
+        return $this->result($zones->getBody(), $result, $purge_urls);
+    }
+
+    /**
+     * Purge cache by files immediately using cloudflare/sdk
+     * @return CloudflareResult|false
+     */
+    public function purgeFiles(array $files) {
     }
 
     /**

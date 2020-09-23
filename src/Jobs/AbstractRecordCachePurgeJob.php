@@ -100,9 +100,11 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob
             $next = new DateTime();
             $next->modify('+' . $record->CacheMaxAge . ' seconds');
             $next_formatted = $next->format('Y-m-d H:i:s');
-            $job = new self($this->reason, $record);
+            $job = Injector::inst()->createWithArgs( get_class($this),  [ $this->reason, $record ] );
             Logger::log("Cloudflare: requeuing job for {$next_formatted}");
             QueuedJobService::singleton()->queueJob($job, $next_formatted);
+        } else {
+            Logger::log("Cloudflare: record has no cache max-age, not recreating");
         }
     }
 }
