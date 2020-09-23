@@ -1,0 +1,35 @@
+{
+    "name": "nswdpc/silverstripe-oldmantium",
+    "description": "Reinforced Cloudflare support for Silverstripe websites",
+    "type": "silverstripe-vendormodule",
+    "keywords": [
+        "silverstripe",
+        "cloudflare",
+        "cache",
+        "purging",
+        "purge",
+        "ttl"
+    ],
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "James",
+            "homepage": "https://dpc.nsw.gov.au",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "symbiote/silverstripe-oldman" : "^3",
+        "cloudflare/sdk" : "^1.1",
+        "symbiote/silverstripe-queuedjobs": "^4",
+        "symbiote/silverstripe-multivaluefield" : "^5"
+    },
+    "suggests" : {
+        "silverstripe/versioned" : "for versioned dataobject support",
+        "silverstripe/versioned-admin" : "for administration of versioned dataobjects"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7",
+        "squizlabs/php_codesniffer": "^3.0"
+    }
+}
