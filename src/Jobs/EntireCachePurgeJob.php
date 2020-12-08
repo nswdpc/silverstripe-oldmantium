@@ -10,7 +10,7 @@ use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Purge all records in zone
- * NOTE: this can have negative consequences for system load and availability on a high traffic websites.
+ * NOTE: this can have negative consequences for system load and availability on a high traffic website
  * @author James Ellis <james.ellis@dpc.nsw.gov.au>
  */
 class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
