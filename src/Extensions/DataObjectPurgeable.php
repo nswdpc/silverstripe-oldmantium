@@ -23,7 +23,7 @@ class DataObjectPurgeable extends DataExtension {
 
     private static $db = [
         'CachePurgeAt' => 'Datetime', // add ability to purge dataobject at a certain date / time
-        'CacheMaxAge' => 'Int'// seconds
+        'CacheMaxAge' => 'Double'// minutes TTL
     ];
 
     public function updateCMSFields(FieldList $fields)
@@ -36,9 +36,9 @@ class DataObjectPurgeable extends DataExtension {
                 ),
                 NumericField::create(
                     'CacheMaxAge',
-                    _t(__CLASS__ . '.CACHE_MAX_AGE', 'Cache maximum age (seconds)')
+                    _t(__CLASS__ . '.CACHE_MAX_AGE', 'Cache maximum age (minutes)')
                 )->setDescription(
-                    _t(__CLASS__ . '.CACHE_MAX_AGE_DESCRIPTION', 'Record URL(s) will be purged at this interval (seconds)')
+                    _t(__CLASS__ . '.CACHE_MAX_AGE_DESCRIPTION', 'Record URL(s) will be purged at this interval in minutes')
                 )->setRightTitle(
                     _t(__CLASS__ . '.CACHE_MAX_AGE_LEAVE_ZERO', 'Leave empty for no regular purge')
                 )->setHTML5(true)
