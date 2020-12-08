@@ -32,7 +32,7 @@ class DataObjectPurgeable extends DataExtension {
             'Root.Cloudflare', [
                 DatetimeField::create(
                     'CachePurgeAt',
-                    _t(__CLASS__ . '.CACHE_PURGE_AT', 'Purge record URL at this date and time (note: UTC)')
+                    _t(__CLASS__ . '.CACHE_PURGE_AT', 'Set purge to occur from this date and time (Timezone: UTC)')
                 ),
                 NumericField::create(
                     'CacheMaxAge',
@@ -41,7 +41,7 @@ class DataObjectPurgeable extends DataExtension {
                     _t(__CLASS__ . '.CACHE_MAX_AGE_DESCRIPTION', 'Record URL(s) will be purged at this interval (seconds)')
                 )->setRightTitle(
                     _t(__CLASS__ . '.CACHE_MAX_AGE_LEAVE_ZERO', 'Leave empty for no regular purge')
-                )
+                )->setHTML5(true)
             ]
         );
     }
@@ -87,6 +87,7 @@ class DataObjectPurgeable extends DataExtension {
     public function onAfterPublish()
     {
         if ($this->owner->hasExtension(Versioned::class)) {
+            Logger::log("Cloudflare: creating jobs for reason=publish");
             $this->owner->createPurgeJobs('publish');
         }
     }
@@ -110,6 +111,7 @@ class DataObjectPurgeable extends DataExtension {
     public function onAfterUnpublish()
     {
         if ($this->owner->hasExtension(Versioned::class)) {
+            Logger::log("Cloudflare: creating jobs for reason=unpublish");
             $this->owner->createPurgeJobs('unpublish');
         }
     }
@@ -121,6 +123,7 @@ class DataObjectPurgeable extends DataExtension {
     public function onAfterDelete()
     {
         if (!$this->owner->hasExtension(Versioned::class)) {
+            Logger::log("Cloudflare: creating jobs for reason=delete");
             $this->owner->createPurgeJobs('delete');
         }
     }
