@@ -24,7 +24,7 @@ use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;
 
 class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
 
-    use PurgeJob;
+    use CachePurgeJobSupport;
 
     private static $table_name = 'CloudflarePurgeRecord';
 

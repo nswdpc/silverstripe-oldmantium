@@ -8,11 +8,12 @@ use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 /**
- * Trait provides the ability to create a queued job of a certain type and sets
+ * Trait provides the ability to create a queued job based on an arbitrary event and sets
  * the start datetime for that job
+ * @see NSWDPC\Utilities\Cloudflare\PurgeRecord for an example
  * @author James
  */
-trait PurgeJob {
+trait CachePurgeJobSupport {
 
     /**
      * Return an array of values that can be purged
