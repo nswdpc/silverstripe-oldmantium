@@ -18,7 +18,7 @@ use Exception;
  * Abstract record cache purge job
  * @author James Ellis <james.ellis@dpc.nsw.gov.au>
  */
-abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob
+abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements QueuedJob
 {
     protected $reason = '';
 
