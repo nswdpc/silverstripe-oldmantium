@@ -22,9 +22,7 @@ use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;
  * @author james.ellis@dpc.nsw.gov.au
  */
 
-class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
-
-    use CachePurgeJobSupport;
+class PurgeRecord extends DataObject implements PermissionProvider {
 
     private static $table_name = 'CloudflarePurgeRecord';
 
@@ -71,14 +69,6 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
         return $result;
     }
 
-    protected function getClient() {
-        $service = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS);
-        $client = $service->getSdkClient();
-        print "<pre>";
-        print_r($client);exit;
-    }
-
-
     public function getCMSFields()
     {
         $fields = parent::getCMSFields();
@@ -109,10 +99,10 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
     }
 
     /**
-     * PurgeRecord only has the configured type
+     * This instance of PurgeRecord only has the configured type
      * @return array
      */
-    public function getPurgeTypes() {
+    public function getPurgeTypes() : array  {
         if($this->Type) {
             return [
                 $this->Type
@@ -122,16 +112,21 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
     }
 
     /**
+     * Get the type values that need to be purged
      * @return array
      */
-    public function getPurgeTypeValues($type) {
+    public function getPurgeTypeValues($type) : array {
         if($type == $this->Type && ($type_values = $this->getField('TypeValues'))) {
             return $this->TypeValues->getValue();
         }
+        return [];
     }
 
-    public function getPurgeRecordName() {
-        return "PurgeRecord";
+    /**
+     * Get the record name for identification in the queuedjob
+     */
+    public function getPurgeRecordName() : string {
+        return 'PurgeRecord';
     }
 
     public function onBeforeWrite()
@@ -143,20 +138,6 @@ class PurgeRecord extends DataObject implements PermissionProvider, Purgeable {
             $this->TypeValues = '';
         }
 
-        if($this->isChanged('CacheMaxAge')
-            || $this->isChanged('CachePurgeAt')
-        ) {
-            // TODO
-
-            // handle options
-            // first delete any jobs that are active for this record
-
-            // if there is no URL don't add a new job
-
-            // if the CachePurgeAt is changed, create a job at that date
-
-            // if the CacheMaxAge is changed, create a job immediately
-        }
     }
 
     public function canView($member = null)
