@@ -8,21 +8,55 @@ use Cloudflare\API\Endpoints\Zones;
 use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Controller;
+use SilverStripe\Security\Security;
+use SilverStripe\Security\Permission;
 use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\Cloudflare\CloudflareResult;
 
 /**
- * Extends Cloudflare to provide enterprise level cache purging support
+ * Extends Cloudflare to provide:
+ * + Purging by tag, host, prefix (Enterprise)
+ * + Purging URLs associated with non SiteTree records (using DataObjectPurgeable)
+ * + Usage of the Cloudflare SDK
+ *
+ * This class overrides the following methids in {@link Symbiote\Cloudflare\Cloudflare}
+ * + purgeAll()
+ * + purgeURLs()
+ *
+ *
+ * Certain methods are handled by {@link Symbiote\Cloudflare\Cloudflare}:
+ * + purgePage()
+ * + purgeImages()
+ * + purgeCSSAndJavascript()
+ * + purgeFilesByExtensions()
+ * + purgeFiles()
+ *
  * @author James
  */
 class CloudflarePurgeService extends Cloudflare {
 
-    private static $purge_all_delay = 6;//hrs
+    /**
+     * @var int
+     * Delay purge all by this many hours (allows undo)
+     */
+    private static $purge_all_delay = 1;
+
+    /**
+     * @var Cloudflare\API\Adapter\Guzzle
+     */
+    private $sdk_client;
 
     const TYPE_HOST = 'Host';
     const TYPE_TAG = 'Tag';
     const TYPE_PREFIX = 'Prefix';
     const TYPE_URL = 'URL';
+    const TYPE_ENTIRE = 'Entire';
+    const TYPE_EXPIRY = 'Expiry';
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
 
     /**
      * @return CloudflareResult|null
@@ -38,24 +72,33 @@ class CloudflarePurgeService extends Cloudflare {
 
     /**
      * Retrieve a cloudflare/sdk client
+     * @return Cloudflare\API\Adapter\Guzzle
      */
-    public function getSdkClient() {
-        $key = new APIKey(
+    protected function getSdkClient() {
+        if($this->sdk_client) {
+            return $this->sdk_client;
+        }
+        $auth = new APIKey(
             $this->config()->get('email'),
             $this->config()->get('auth_key')
         );
-        $adapter = new Guzzle($key);
-        return $adapter;
+        $this->sdk_client = new Guzzle($auth);
+        return $this->sdk_client;
     }
 
     /**
      * Purge all from zone by creating a cache purge job in the future (which handles the purging)
      * The idea here is that job will be created in the future with a configured delay (hrs)
      * This allows job cancellation and manual actioning
+     * Only members with the permission ADMIN may create this job (in this method)
      * @return CloudflareResult|null
      */
     public function purgeAll()
     {
+        $member = Security::currentUser();
+        if(!Permission::checkMember($member, 'ADMIN')) {
+            return false;
+        }
         $job = new EntireCachePurgeJob();
         $start = new \DateTime();
         $delay = $this->config()->get('purge_all_delay');
@@ -87,8 +130,8 @@ class CloudflarePurgeService extends Cloudflare {
         Logger::log("Cloudflare: purging tags " . implode(",", $tags));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
-            null, // hosts
-            $tags,
+            null, // files
+            $tags, // tags
             null  //hosts
         );
         return $this->result($zones->getBody(), $result, $tags);
@@ -121,7 +164,6 @@ class CloudflarePurgeService extends Cloudflare {
     public function purgeURLs(array $urls) {
 
         if(empty($urls)) {
-            Logger::log("Cloudflare: no URLs to purge");
             return false;
         }
 
@@ -140,28 +182,20 @@ class CloudflarePurgeService extends Cloudflare {
             } else {
                 $purge_urls[] = Controller::join_links($base_url, $url);
             }
+            // Logger::log("Cloudflare: purging {$url}");
         }
 
         $zones = new Zones( $this->getSdkClient() );
-        foreach($purge_urls as $purge_url) {
-            Logger::log("Cloudflare: purging {$purge_url}");
-        }
 
+        // Logger::log("Cloudflare: zones->cachePurge() with " . count($purge_urls) . " URLs");
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
-            $purge_urls, // 'files'
+            $purge_urls, // files
             null, // tags
             null  //hosts
         );
-        Logger::log("Cloudflare: purge request finished");
+        // @link {Cloudflare\API\Traits\BodyAccessorTrait}
         return $this->result($zones->getBody(), $result, $purge_urls);
-    }
-
-    /**
-     * Purge cache by files immediately using cloudflare/sdk
-     * @return CloudflareResult|false
-     */
-    public function purgeFiles(array $files) {
     }
 
     /**

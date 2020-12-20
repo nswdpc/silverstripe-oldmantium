@@ -22,9 +22,9 @@ class PrefixCachePurgeJob extends AbstractRecordCachePurgeJob
     public function process() {
         try {
             $values = $this->checkRecordForErrors('prefixes');
-            $this->checkPurgeResult(Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgePrefixes($values['prefixes']));
+            $this->checkPurgeResult( $this->getPurgeClient()->purgePrefixes($values['prefixes']) );
         } catch (\Exception $e) {
-            Logger::log("Cloudflare: failed to purge prefixes with error=" . $e->getMessage());
+            $this->addMessage("Cloudflare: failed to purge prefixes with error=" . $e->getMessage() . " of type " . get_class($e));
             $this->isComplete = false;
         }
         return false;

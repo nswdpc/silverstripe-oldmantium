@@ -22,9 +22,9 @@ class TagCachePurgeJob extends AbstractRecordCachePurgeJob
     public function process() {
         try {
             $values = $this->checkRecordForErrors('tags');
-            $this->checkPurgeResult(Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS)->purgeTags($values['tags']));
+            $this->checkPurgeResult( $this->getPurgeClient()->purgeTags($values['tags']) );
         } catch (\Exception $e) {
-            Logger::log("Cloudflare: failed to purge tags with error=" . $e->getMessage());
+            $this->addMessage("Cloudflare: failed to purge tags with error=" . $e->getMessage() . " of type " . get_class($e));
             $this->isComplete = false;
         }
         return false;

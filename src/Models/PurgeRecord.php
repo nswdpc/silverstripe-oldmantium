@@ -5,6 +5,7 @@ namespace NSWDPC\Utilities\Cloudflare;
 use gorriecoe\LinkField\LinkField;
 use gorriecoe\Link\Models\Link;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\Forms\DropdownField;
@@ -14,11 +15,11 @@ use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\MultiValueField\Fields\MultiValueListField;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
 use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;
+use Symbiote\MultiValueField\ORM\FieldType\MultiValueField;
 
 /**
  * A PurgeRecord
- * Note: requires a Cloudflare Enterprise account
- * @link DataObjectPurgeable
+ * {@link NSWDPC\Utilities\Cloudflare\DataObjectPurgeable} provides event handling for this class
  * @author james.ellis@dpc.nsw.gov.au
  */
 
@@ -30,16 +31,22 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     private static $plural_name = 'Cloudflare purge records';
 
     private static $db = [
+        'Title' => 'Varchar(255)',
         'Type' => 'Varchar(8)',
         'TypeValues' => 'MultiValueField'
     ];
 
     private static $summary_fields = [
+        'Title' => 'Title',
         'Type' => 'Type',
         'TypeValues.csv' => 'Values',
     ];
 
     public function getTitle() {
+        $title = trim($this->getField('Title'));
+        if($title) {
+            return $title;
+        }
         $values = [];
         if($this->Type) {
             $values = $this->getPurgeTypeValues($this->Type);
@@ -116,8 +123,12 @@ class PurgeRecord extends DataObject implements PermissionProvider {
      * @return array
      */
     public function getPurgeTypeValues($type) : array {
-        if($type == $this->Type && ($type_values = $this->getField('TypeValues'))) {
-            return $this->TypeValues->getValue();
+        if($type == $this->Type) {
+            $field = DBField::create_field(MultiValueField::class, $this->TypeValuesValue);
+            $items = $field->getValue();
+            if(is_array($items)) {
+                return $items;
+            }
         }
         return [];
     }
@@ -126,18 +137,15 @@ class PurgeRecord extends DataObject implements PermissionProvider {
      * Get the record name for identification in the queuedjob
      */
     public function getPurgeRecordName() : string {
-        return 'PurgeRecord';
+        return AbstractRecordCachePurgeJob::RECORD_NAME;
     }
 
     public function onBeforeWrite()
     {
         parent::onBeforeWrite();
-
         if($this->exists() && $this->isChanged('Type')) {
-            Logger::log("Cloudflare: remove values as type changed in PurgeRecord");
             $this->TypeValues = '';
         }
-
     }
 
     public function canView($member = null)
@@ -164,23 +172,22 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     {
         return [
             'CLOUDFLARE_PURGERECORD_VIEW' => [
-                'name' => 'View Cloudflare purge record',
+                'name' => _t(__CLASS__ . '.PERMISSION_VIEW', 'View Cloudflare purge records'),
                 'category' => 'Cloudflare',
             ],
             'CLOUDFLARE_PURGERECORD_EDIT' => [
-                'name' => 'Edit Cloudflare purge record',
+                'name' => _t(__CLASS__ . '.PERMISSION_EDIT', 'Edit Cloudflare purge records'),
                 'category' => 'Cloudflare',
             ],
             'CLOUDFLARE_PURGERECORD_CREATE' => [
-                'name' => 'Create Cloudflare purge record',
+                'name' => _t(__CLASS__ . '.PERMISSION_CREATE', 'Create Cloudflare purge records'),
                 'category' => 'Cloudflare',
             ],
             'CLOUDFLARE_PURGERECORD_DELETE' => [
-                'name' => 'Delete Cloudflare purge record',
+                'name' => _t(__CLASS__ . '.PERMISSION_DELETE', 'Delete Cloudflare purge records'),
                 'category' => 'Cloudflare',
             ]
         ];
     }
-
 
 }

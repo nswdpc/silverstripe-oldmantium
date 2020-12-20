@@ -20,7 +20,6 @@ use Exception;
  */
 abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements QueuedJob
 {
-    protected $reason = '';
 
     protected $totalSteps = 1;
 
@@ -34,9 +33,10 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         if($object) {
             $this->setObject($object, self::RECORD_NAME);
         }
+    }
 
-        $this->totalSteps = 1;
-        $this->currentStep = 0;
+    public function getPurgeClient() {
+        return Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS);
     }
 
     public function getTitle() {
@@ -58,9 +58,6 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         if(!$record) {
             throw new \Exception("Record not found");
         }
-        if(!$record instanceof Purgeable) {
-            throw new \Exception("Record is not implementing Purgeable");
-        }
         $values = $record->getPurgeValues();
         if(empty($values[ $type ])) {
             throw new \Exception("Record has no '{$type}' values to purge");
@@ -68,19 +65,23 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         return $values;
     }
 
+    /**
+     * Checks the result of the purge, if not an error the job is marked as complete
+     * @return true
+     * @throws \Exception
+     */
     final protected function checkPurgeResult($result) {
         if(!$result || !$result instanceof CloudflareResult) {
             throw new \Exception("Result is not a CloudflareResult instance");
         }
         $errors = $result->getErrors();
-        if(empty($errors)) {
-            Logger::log("Job completed without errors", "INFO");
-            $this->currentStep++;
-            $this->isComplete = true;
-            return true;
-        } else {
+        if(!empty($errors)) {
             throw new \Exception("Purge had errors:" . json_encode($errors));
         }
+        // Logger::log("Job completed without errors");
+        $this->currentStep++;
+        $this->isComplete = true;
+        return true;
     }
 
     /**
@@ -89,11 +90,10 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
      */
     public function afterComplete()
     {
-        Logger::log("Job -> afterComplete", "INFO");
         $record = $this->getObject(self::RECORD_NAME);
         if(!$record) {
             // record no longer exists
-            Logger::log("Cloudflare: record in job no longer exists or could not be found");
+            $this->addMessage("Cloudflare: record in job no longer exists or could not be found");
             return;
         }
         if($record->CacheMaxAge && $record->CacheMaxAge > 0) {
@@ -101,10 +101,10 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
             $next->modify('+' . $record->CacheMaxAge . ' seconds');
             $next_formatted = $next->format('Y-m-d H:i:s');
             $job = Injector::inst()->createWithArgs( get_class($this),  [ $this->reason, $record ] );
-            Logger::log("Cloudflare: requeuing job for {$next_formatted}");
+            $this->addMessage("Cloudflare: requeuing job for {$next_formatted}");
             QueuedJobService::singleton()->queueJob($job, $next_formatted);
         } else {
-            Logger::log("Cloudflare: record has no cache max-age, not recreating");
+            $this->addMessage("Cloudflare: record has no cache max-age, not recreating");
         }
     }
 }

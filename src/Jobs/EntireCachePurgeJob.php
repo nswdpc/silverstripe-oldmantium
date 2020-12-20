@@ -25,7 +25,7 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
      */
     public function process() {
         try {
-            $client = Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS);
+            $client = $this->getPurgeClient();
             $key = new APIKey(
                 $client->config()->get('email'),
                 $client->config()->get('auth_key')
@@ -33,7 +33,9 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
             $adapter = new Guzzle($key);
             $zones = new Zones( $adapter );
             $zone_id = $client->getZoneIdentifier();
-            Logger::log("Cloudflare: purging all from zone {$zone_id}");
+            $msg = "Cloudflare: purging all from zone {$zone_id}";
+            Logger::log($msg, "NOTICE");
+            $this->addMessage($msg);
             $result = $zones->cachePurge( $zone_id );
             if($result) {
                 $this->addMessage("Purged all in zone {$zone_id}");
@@ -45,6 +47,7 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
             }
         } catch (\Exception $e) {
             // log an error
+            Logger::log("EntireCachePurgeJob error - " . $e->getMessage(), "WARNING");
         }
         $this->isComplete = false;
     }

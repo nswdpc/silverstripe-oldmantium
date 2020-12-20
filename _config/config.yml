@@ -9,3 +9,4 @@ SilverStripe\Core\Injector\Injector:
 NSWDPC\Utilities\Cloudflare\PurgeRecord:
   extensions:
     - 'NSWDPC\Utilities\Cloudflare\DataObjectPurgeable'
+    - 'Silverstripe\Versioned\Versioned'
