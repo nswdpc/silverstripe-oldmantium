@@ -14,7 +14,7 @@ class PrefixCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by prefix(es)');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'CF purge prefix(es)');
     }
     /**
      * Process the job

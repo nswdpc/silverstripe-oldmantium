@@ -49,8 +49,9 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     public function getTitle() {
         $object = $this->getObject(self::RECORD_NAME);
         if($object) {
-            $title = $object->singular_name() ?: get_class($object);
-            return "Record: {$title}";
+            $type = $object->singular_name();
+            $title = "{$type}#{$object->ID}/{$object->Title}";
+            return $title;
         }
         return "";
     }

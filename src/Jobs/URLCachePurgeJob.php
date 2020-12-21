@@ -13,7 +13,7 @@ class URLCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by url(s)');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'CF purge URL(s)');
     }
 
     /**

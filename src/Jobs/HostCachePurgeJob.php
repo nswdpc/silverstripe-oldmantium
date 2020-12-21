@@ -15,7 +15,7 @@ class HostCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by host(s)');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'CF purge host(s)');
     }
     /**
      * Process the job

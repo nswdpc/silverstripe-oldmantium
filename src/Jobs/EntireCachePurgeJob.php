@@ -15,7 +15,7 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
     public function __construct($params = null) {}
 
     public function getTitle() {
-        return _t(__CLASS__ . '.JOB_TITLE', 'Purge all in zone (WARNING!)');
+        return _t(__CLASS__ . '.JOB_TITLE', 'CF Purge all in zone (WARNING!)');
     }
 
     /**

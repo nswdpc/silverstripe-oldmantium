@@ -43,22 +43,6 @@ class PurgeRecord extends DataObject implements PermissionProvider {
         'TypeValues.csv' => 'Values',
     ];
 
-    public function getTitle() {
-        $title = trim($this->getField('Title'));
-        if($title) {
-            return $title;
-        }
-        $values = [];
-        if($this->Type) {
-            $values = $this->getPurgeTypeValues($this->Type);
-        }
-        $title =$this->Type;
-        if(is_array($values)) {
-            $title .= " - " . implode(",", $values);
-        }
-        return $title;
-    }
-
     /**
      * Get available types to select from in the administration screen
      * @return array

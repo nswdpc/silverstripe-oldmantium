@@ -14,7 +14,7 @@ class TagCachePurgeJob extends AbstractRecordCachePurgeJob
 {
 
     public function getTitle() {
-        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'Cloudflare purge cache by tag(s)');
+        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'CF purge tag(s)');
     }
     /**
      * Process the job
