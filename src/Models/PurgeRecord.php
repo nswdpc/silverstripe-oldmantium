@@ -4,6 +4,7 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use gorriecoe\LinkField\LinkField;
 use gorriecoe\Link\Models\Link;
+use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\DataObject;
@@ -124,10 +125,16 @@ class PurgeRecord extends DataObject implements PermissionProvider {
      */
     public function getPurgeTypeValues($type) : array {
         if($type == $this->Type) {
-            $field = DBField::create_field(MultiValueField::class, $this->TypeValuesValue);
-            $items = $field->getValue();
-            if(is_array($items)) {
-                return $items;
+            try {
+                $items = $this->TypeValues;
+                if($items instanceof MultiValueField) {
+                    $items = $items->getValue();
+                }
+                if(is_array($items)) {
+                    return $items;
+                }
+            } catch (\Exception $e) {
+                // log a notice
             }
         }
         return [];
@@ -144,7 +151,17 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     {
         parent::onBeforeWrite();
         if($this->exists() && $this->isChanged('Type')) {
-            $this->TypeValues = '';
+            $this->TypeValues = null;
+        }
+
+        if($this->Type == CloudflarePurgeService::TYPE_URL) {
+            $values = $this->getPurgeTypeValues( $this->Type );
+            if(is_array($values)) {
+                foreach($values as $i => $value) {
+                    $values[$i] = Director::absoluteURL($value);
+                }
+            }
+            $this->TypeValues = $values;
         }
     }
 

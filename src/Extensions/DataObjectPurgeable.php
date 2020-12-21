@@ -23,8 +23,6 @@ use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 
 class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
-    private static $cache_max_age = 0;
-
     const REASON_WRITE = 'write';
     const REASON_DELETE = 'delete';
 
@@ -160,7 +158,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                 // e.g result['tags'] = ['blog','support','security']
                 // result is keyed by the allowed purge_cache options
                 $result[ $mappings[ $type ] ] = $this->owner->getPurgeTypeValues( $type );
-                Logger::log("Cloudflare: getPurgeValues returning " .  count($result[ $mappings[ $type ] ]) . " records for type {$type}");
+                // Logger::log("Cloudflare: getPurgeValues returning " .  count($result[ $mappings[ $type ] ]) . " records for type {$type}");
             }
         }
 
@@ -216,13 +214,13 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             return $list;
         }
 
-        $jobs = QueuedJobDescriptor::get()
-                    ->filter([
-                        'Implementation' => $implementations
-                    ])
-                    ->exclude([
-                        'JobStatus' => $statii
-                    ]);
+        $jobs = QueuedJobDescriptor::get();
+        $jobs = $jobs->filter([
+            'Implementation' => $implementations
+        ]);
+        $jobs = $jobs->exclude([
+            'JobStatus' => $statii
+        ]);
 
         $name = $this->owner->getPurgeRecordName();
         $record_id = "{$name}ID";
@@ -315,7 +313,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         try {
             $jobs_queued = [];
             if (!Cloudflare::config()->enabled) {
-                Logger::log("Cloudflare: enabled=off","NOTICE");
+                Logger::log("Cloudflare: createPurgeJobs called but Cloudflare.enabled=off","NOTICE");
                 return false;
             }
             if(!$start) {
@@ -328,7 +326,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             // get all possible jobs for this record
             $jobs = $this->owner->getPurgeJobs($reason);
             if(empty($jobs)) {
-                // Logger::log("Cloudflare: createPurgeJobs there are no jobs available for reason={$reason}");
+                Logger::log("Cloudflare: createPurgeJobs there are no jobs available for reason={$reason}","NOTICE");
                 return false;
             }
             foreach($jobs as $job) {
@@ -344,7 +342,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                 ) {
                     $descriptor = QueuedJobDescriptor::get()->byId($job_id);
                     if($descriptor && $descriptor->exists()) {
-                        Logger::log("Cloudflare: createPurgeJobs reason={$reason} job #{$job_id}/" . get_class($job));
+                        // Logger::log("Cloudflare: createPurgeJobs reason={$reason} job #{$job_id}/" . get_class($job));
                         $jobs_queued[] = $job;
                     }
                 }

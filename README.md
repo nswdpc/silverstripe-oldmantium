@@ -1,31 +1,26 @@
 # Reinforced Cloudflare support for Silverstripe websites
 
-> This module is in development, do not use in production
-
-This module provides some extra sharp additions to for Silverstripe installs that use Cloudflare as a frontend
+This module provides some extra sharp additions for Silverstripe using Cloudflare as a frontend
 
 ### Features
 
-- Extension for DataObjects with URLs that need to be purged from time-to-time
-- Regular purging based on a defined cache max-age
-- Max-age per record or per class
-- Purge URL(s) related to a record at a certain date
-- Add one-off URL records to purge
+- Versioned DataObject purging, when that DataObject can be represented by one or more URLs
+- Purge hosts, tags, prefixes (for [Enterprise]([https://api.cloudflare.com/#zone-purge-files-by-cache-tags,-host-or-prefix) Cloudflare accounts)
 - Permissions for administration access to purging
-- Purge all in zone
+- Purge all in zone via a queued job
 
 ## Requirements
 
 See [composer.json](./composer.json) for specifics.
 
-```json
-"require": {
-    "symbiote/silverstripe-oldman" : "^3",
-    "cloudflare/sdk" : "^1.1",
-    "symbiote/silverstripe-queuedjobs": "^4",
-    "symbiote/silverstripe-multivaluefield" : "^5"
-}
-```
++ Versioned
++ Cloudflare PHP SDK
++ Oldman
++ MultivalueField
++ Queued Jobs
+
+Site publish/unpublish URL purging is undertaken by [symbiote/silverstripe-oldman](https://github.com/symbiote/silverstripe-oldman)
+
 
 ## Installation
 
@@ -58,21 +53,17 @@ Symbiote\Cloudflare\Cloudflare:
   base_url: 'https://www.example.com/'
 ```
 
-Give a `DataObject` the ability to purge from Cloudfront cache
+### Versioned DataObject
+
+Give a Versioned `DataObject` the ability to purge from Cloudfront cache
 
 ```yaml
-My\Namespaced\Thing:
+My\Namespaced\Record:
   extensions:
     - 'NSWDPC\Utilities\Cloudflare\DataObjectPurgeable'
 ```
 
-Configure all records of a DataObject to have a max-age:
-```yaml
-My\Namespaced\Thing:
-  cache_max_age: 86400
-```
-
-This will create a queued job running every ```cache_max_age``` seconds that will purge `Thing` records if their LastEdited date is older than this time.
+When `My\Namespaced\Record` is published or unpublished, the corresponding URLCachePurgeJob will be created as a queued job.
 
 
 ## Maintainers

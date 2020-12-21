@@ -12,6 +12,8 @@ use SilverStripe\Security\Security;
 use SilverStripe\Security\Permission;
 use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\Cloudflare\CloudflareResult;
+use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
+use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 /**
  * Extends Cloudflare to provide:
@@ -51,7 +53,6 @@ class CloudflarePurgeService extends Cloudflare {
     const TYPE_PREFIX = 'Prefix';
     const TYPE_URL = 'URL';
     const TYPE_ENTIRE = 'Entire';
-    const TYPE_EXPIRY = 'Expiry';
 
     public function __construct()
     {
@@ -95,7 +96,7 @@ class CloudflarePurgeService extends Cloudflare {
      */
     public function purgeAll()
     {
-        $member = Security::currentUser();
+        $member = Security::getCurrentUser();
         if(!Permission::checkMember($member, 'ADMIN')) {
             return false;
         }
@@ -106,7 +107,7 @@ class CloudflarePurgeService extends Cloudflare {
             $start->modify("+1 {$delay} hours");
         }
         $result = false;
-        Logger::log("Cloudflare: purging all (via job)");
+        // Logger::log("Cloudflare: purging all (via job)");
         if($job_id = QueuedJobService::singleton()->queueJob(
                         $job,
                         $start->format('Y-m-d H:i:s')
@@ -127,7 +128,7 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
         $zones = new Zones( $this->getSdkClient() );
-        Logger::log("Cloudflare: purging tags " . implode(",", $tags));
+        // Logger::log("Cloudflare: purging tags " . implode(",", $tags));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
             null, // files
@@ -146,7 +147,7 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
         $zones = new Zones( $this->getSdkClient() );
-        Logger::log("Cloudflare: purging hosts " . implode(",", $hosts));
+        // Logger::log("Cloudflare: purging hosts " . implode(",", $hosts));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
             null, // files
@@ -174,14 +175,7 @@ class CloudflarePurgeService extends Cloudflare {
         }
 
         foreach($urls as $url) {
-            $parts = parse_url($url);
-            $is_absolute = false;
-            if(isset($parts['scheme']) && isset($parts['host'])) {
-                // URL has a scheme and host, treat as absolute
-                $purge_urls[] = $url;
-            } else {
-                $purge_urls[] = Controller::join_links($base_url, $url);
-            }
+            $purge_urls[] = Director::absoluteURL($url);
             // Logger::log("Cloudflare: purging {$url}");
         }
 
@@ -211,7 +205,7 @@ class CloudflarePurgeService extends Cloudflare {
             $options = [
                 'prefixes' => $prefixes
             ];
-            Logger::log("Cloudflare: purging prefixes " . implode(",", $prefixes));
+            // Logger::log("Cloudflare: purging prefixes " . implode(",", $prefixes));
             $user = $adapter->post('zones/' . $this->getZoneIdentifier() . '/purge_cache', $options);
             $body = json_decode($user->getBody());
             $result = isset($body->result->id);

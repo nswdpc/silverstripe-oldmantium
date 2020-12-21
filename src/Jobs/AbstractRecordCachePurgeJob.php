@@ -35,6 +35,13 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         }
     }
 
+    /**
+     * Opportunity to add some logging here
+     */
+    public function addMessage($msg, $level = null) {
+        return parent::addMessage($msg, $level);
+    }
+
     public function getPurgeClient() {
         return Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS);
     }

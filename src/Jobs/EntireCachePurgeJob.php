@@ -2,11 +2,7 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use Cloudflare\API\Auth\APIKey;
-use Cloudflare\API\Adapter\Guzzle;
 use Cloudflare\API\Endpoints\Zones;
-use SilverStripe\Core\Injector\Injector;
-use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Purge all records in zone
@@ -15,6 +11,8 @@ use Symbiote\Cloudflare\Cloudflare;
  */
 class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
 {
+
+    public function __construct($params = null) {}
 
     public function getTitle() {
         return _t(__CLASS__ . '.JOB_TITLE', 'Purge all in zone (WARNING!)');
@@ -26,17 +24,13 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
     public function process() {
         try {
             $client = $this->getPurgeClient();
-            $key = new APIKey(
-                $client->config()->get('email'),
-                $client->config()->get('auth_key')
-            );
-            $adapter = new Guzzle($key);
+            $adapter = $client->getSdkClient();
             $zones = new Zones( $adapter );
             $zone_id = $client->getZoneIdentifier();
             $msg = "Cloudflare: purging all from zone {$zone_id}";
             Logger::log($msg, "NOTICE");
-            $this->addMessage($msg);
-            $result = $zones->cachePurge( $zone_id );
+            $this->addMessage($msg, "NOTICE");
+            $result = $zones->cachePurgeEverything( $zone_id );
             if($result) {
                 $this->addMessage("Purged all in zone {$zone_id}");
                 $this->isComplete = true;
