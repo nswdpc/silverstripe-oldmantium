@@ -66,7 +66,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             // Logger::log("Cloudflare: creating jobs for reason=publish");
             $start = null;
             if($this->owner->CachePurgeAt) {
-                $start = new \DataTime( $this->owner->CachePurgeAt );
+                $start = new \DateTime( $this->owner->CachePurgeAt );
             }
             $this->owner->createPurgeJobs('publish', $start);
         }
@@ -82,7 +82,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             // Logger::log("Cloudflare: creating jobs for reason=unpublish");
             $start = null;
             if($this->owner->CachePurgeAt) {
-                $start = new \DataTime( $this->owner->CachePurgeAt );
+                $start = new \DateTime( $this->owner->CachePurgeAt );
             }
             $this->owner->createPurgeJobs('unpublish');
         }
