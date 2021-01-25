@@ -21,7 +21,7 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
  * + Purging URLs associated with non SiteTree records (using DataObjectPurgeable)
  * + Usage of the Cloudflare SDK
  *
- * This class overrides the following methids in {@link Symbiote\Cloudflare\Cloudflare}
+ * This class overrides the following methods in {@link Symbiote\Cloudflare\Cloudflare}
  * + purgeAll()
  * + purgeURLs()
  *
