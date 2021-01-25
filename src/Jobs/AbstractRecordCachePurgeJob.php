@@ -67,8 +67,12 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
             throw new \Exception("Record not found");
         }
         $values = $record->getPurgeValues();
-        if(empty($values[ $type ])) {
+        if(empty($values[ $type ]) || !is_array($values[ $type ])) {
             throw new \Exception("Record has no '{$type}' values to purge");
+        } else {
+            foreach($values[$type] as $k => $value) {
+                $this->addMessage("Purging '{$value}' of type '{$type}'...");
+            }
         }
         return $values;
     }
