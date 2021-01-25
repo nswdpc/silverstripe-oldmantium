@@ -84,9 +84,20 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         }
         $errors = $result->getErrors();
         if(!empty($errors)) {
+            foreach($errors as $e => $file) {
+                $this->addMessage('Error: ' . $file);
+            }
             throw new \Exception("Purge had errors:" . json_encode($errors));
         }
-        // Logger::log("Job completed without errors");
+        $this->addMessage('Job completed without errors');
+        $successes = $result->getSuccesses();
+        if(!empty($successes)) {
+            foreach($successes as $s => $file) {
+                $this->addMessage('Success: ' . $file);
+            }
+        } else {
+            $this->addMessage('Success: no success records found');
+        }
         $this->currentStep++;
         $this->isComplete = true;
         return true;
