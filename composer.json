@@ -21,7 +21,7 @@
     "require": {
         "silverstripe/versioned" : "^1",
         "symbiote/silverstripe-oldman" : "^3",
-        "cloudflare/sdk" : "^1.1",
+        "cloudflare/sdk" : "^1.3",
         "symbiote/silverstripe-queuedjobs": "^4",
         "symbiote/silverstripe-multivaluefield" : "^5"
     },
