@@ -2,8 +2,10 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
+use Cloudflare\API\Auth\Auth;
 use Cloudflare\API\Auth\APIKey;
-use Cloudflare\API\Adapter\Guzzle;
+use Cloudflare\API\Auth\APIToken;
+use Cloudflare\API\Adapter\Guzzle as CloudflareGuzzleAdapter;
 use Cloudflare\API\Endpoints\Zones;
 use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
 use SilverStripe\Control\Director;
@@ -44,9 +46,9 @@ class CloudflarePurgeService extends Cloudflare {
     private static $purge_all_delay = 1;
 
     /**
-     * @var Cloudflare\API\Adapter\Guzzle
+     * @var \Cloudflare\API\Adapter\Guzzle
      */
-    private $sdk_client;
+    private $sdk_client = null;
 
     const TYPE_HOST = 'Host';
     const TYPE_TAG = 'Tag';
@@ -72,18 +74,36 @@ class CloudflarePurgeService extends Cloudflare {
     }
 
     /**
-     * Retrieve a cloudflare/sdk client
-     * @return Cloudflare\API\Adapter\Guzzle
+     * Get the auth handler based on configuration (APIToken or APIKey)
+     * @see https://developers.cloudflare.com/api/tokens/
+     * @return Auth|null
      */
-    protected function getSdkClient() {
+    public function getAuthHandler() : ?Auth {
+        $authToken = $this->config()->get('auth_token');// recommended
+        $authKey = $this->config()->get('auth_key');// legacy behaviour
+        $auth = null;
+        if($authToken) {
+            $auth = new APIToken($authToken);
+        } else if($authKey) {
+            $auth = new APIKey(
+                $this->config()->get('email'),
+                $authKey
+            );
+        }
+        return $auth;
+    }
+
+    /**
+     * Retrieve a cloudflare/sdk client
+     * @return CloudflareGuzzleAdapter|null
+     */
+    public function getSdkClient() : ?CloudflareGuzzleAdapter {
         if($this->sdk_client) {
             return $this->sdk_client;
         }
-        $auth = new APIKey(
-            $this->config()->get('email'),
-            $this->config()->get('auth_key')
-        );
-        $this->sdk_client = new Guzzle($auth);
+        if($auth = $this->getAuthHandler()) {
+            $this->sdk_client = new Guzzle($auth);
+        }
         return $this->sdk_client;
     }
 
