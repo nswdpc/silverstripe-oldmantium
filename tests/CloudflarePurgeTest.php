@@ -48,7 +48,7 @@ class CloudflarePurgeTest extends SapphireTest
         ]
     ];
 
-    public function setUp() {
+    public function setUp() : void {
         parent::setUp();
 
         // Mock a CloudflarePurgeService
