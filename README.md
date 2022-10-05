@@ -41,7 +41,29 @@ See [License](./LICENSE.md)
 
 ## Configuration
 
-Given a a standard symbiote-oldman configuration:
+
+### Authentication Token
+
+Documentation: https://developers.cloudflare.com/api/get-started/create-token/
+
+1. Create Custom Token, give it a name
+1. Zone / Cache Purge / Purge
+1. Include Zone / Specific Zone / < zone >
+1. Client IP Address filtering: restrict access to token
+1. TTL, if required
+
+```yaml
+Symbiote\Cloudflare\Cloudflare:
+  enabled: true
+  auth_token: '<auth_key>'
+  zone_id: '<zone_id>'
+  # Optional, specify a URL to use instead of Director::baseURL()
+  base_url: 'https://www.example.com/'
+```
+
+### Authentication Key (legacy)
+
+Documentation: https://developers.cloudflare.com/api/get-started/keys/
 
 ```yaml
 Symbiote\Cloudflare\Cloudflare:
