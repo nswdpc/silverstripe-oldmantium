@@ -55,7 +55,7 @@ Documentation: https://developers.cloudflare.com/api/get-started/create-token/
 ```yaml
 Symbiote\Cloudflare\Cloudflare:
   enabled: true
-  auth_token: '<auth_key>'
+  auth_token: '<auth_token>'
   zone_id: '<zone_id>'
   # Optional, specify a URL to use instead of Director::baseURL()
   base_url: 'https://www.example.com/'
