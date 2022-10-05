@@ -74,6 +74,52 @@ class CloudflarePurgeService extends Cloudflare {
     }
 
     /**
+     * Remove reading mode from URLs
+     * @param array each value is a string URL that can be parsed by parse_url()
+     * @return void
+     */
+    public static function removeReadingMode( array &$urls ) {
+        array_walk(
+            $urls,
+            function(&$value, $key) {
+
+                $parts = parse_url($value);
+
+                $query = [];
+                if(isset($parts['query'])) {
+                    parse_str($parts['query'], $query);
+                }
+
+                // bail if no stage
+                if(!isset($query['stage'])) {
+                    return;
+                }
+
+                unset($query['stage']);
+
+                $url = "";
+                if(isset($parts['scheme'])) {
+                    $url .= $parts['scheme'] . "://";
+                }
+                if(isset($parts['host'])) {
+                    $url .= $parts['host'];
+                }
+                if(isset($parts['port'])) {
+                    $url .= ":" . $parts['port'];
+                }
+                if(isset($parts['path'])) {
+                    $url .= $parts['path'];
+                }
+                if(count($query) > 0) {
+                    $url .= "?" . http_build_query($query);
+                }
+
+                $value = $url;
+            }
+        );
+    }
+
+    /**
      * Get the auth handler based on configuration (APIToken or APIKey)
      * @see https://developers.cloudflare.com/api/tokens/
      * @return Auth|null
@@ -187,6 +233,9 @@ class CloudflarePurgeService extends Cloudflare {
         if(empty($urls)) {
             return false;
         }
+
+        // Remove any reading mode added to the URL in query string
+        static::removeReadingMode($urls);
 
         $purge_urls = [];
         $base_url = $this->config()->get('base_url');
