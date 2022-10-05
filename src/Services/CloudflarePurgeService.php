@@ -148,7 +148,7 @@ class CloudflarePurgeService extends Cloudflare {
             return $this->sdk_client;
         }
         if($auth = $this->getAuthHandler()) {
-            $this->sdk_client = new Guzzle($auth);
+            $this->sdk_client = new CloudflareGuzzleAdapter($auth);
         }
         return $this->sdk_client;
     }
