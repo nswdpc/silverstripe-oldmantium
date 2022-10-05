@@ -12,8 +12,6 @@ use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
 use NSWDPC\Utilities\Cloudflare\PrefixCachePurgeJob;
 use NSWDPC\Utilities\Cloudflare\TagCachePurgeJob;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Dev\TestOnly;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Versioned\Versioned;
 use Symbiote\Cloudflare\Cloudflare;
@@ -127,8 +125,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -175,8 +172,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -202,7 +198,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $urls = $record->getPurgeUrlList();
 
-        $this->assertEquals(2, count($urls), "getPurgeUrlList count is not 2");
+        $this->assertEquals(3, count($urls), "getPurgeUrlList count is not 2");
         $this->assertTrue(array_search($record->AbsoluteLink(), $urls) !== false, "AbsoluteLink not found in getPurgeUrlList");
         $this->assertTrue(array_search($record->SomeRelatedLink(), $urls) !== false, "SomeRelatedLink not found in getPurgeUrlList");
 
@@ -240,13 +236,16 @@ class CloudflarePurgeTest extends SapphireTest
         $keys = array_keys($data);
         $this->assertEquals(1, count($keys), "There should only be one key in the data, found: " . count($data));
 
-        $this->assertEquals($record->getPurgeUrlList(), $data['files'], "Purged files sent in data does not match record getPurgeUrlList");
+        // compare with returned values that should not have reading modes
+        $urls = $record->getPurgeUrlList();
+        CloudflarePurgeService::removeReadingMode($urls);
+
+        $this->assertEquals( $urls, $data['files'], "Purged files sent in data does not match record getPurgeUrlList");
         $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -300,13 +299,16 @@ class CloudflarePurgeTest extends SapphireTest
         $keys = array_keys($data);
         $this->assertEquals(1, count($keys), "There should only be one key in the data, found: " . count($data));
 
-        $this->assertEquals($record->getPurgeUrlList(), $data['files'], "Purged files sent in data does not match record getPurgeUrlList");
+        // compare with returned values that should not have reading modes
+        $urls = $record->getPurgeUrlList();
+        CloudflarePurgeService::removeReadingMode($urls);
+
+        $this->assertEquals($urls, $data['files'], "Purged files sent in data does not match record getPurgeUrlList");
         $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -377,8 +379,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -425,8 +426,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -497,8 +497,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -545,8 +544,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -617,8 +615,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -665,8 +662,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -704,8 +700,7 @@ class CloudflarePurgeTest extends SapphireTest
 
         $this->assertEquals(
             [
-                $this->client->config()->get('email'),
-                $this->client->config()->get('auth_key')
+                "Bearer " . $this->client->config()->get('auth_token')
             ],
             array_values($client_headers),
             "Client AUTH headers mismatch"
@@ -748,46 +743,6 @@ class CloudflarePurgeTest extends SapphireTest
             $this->assertEquals($expected, $parseUrls[0], "Returned URL does not match expected");
         }
 
-    }
-
-}
-
-
-class TestVersionedRecord extends DataObject implements TestOnly
-{
-    private static $db = [
-        'Title' => 'Varchar(255)'
-    ];
-
-    private static $table_name = "TestVersionedRecord";
-
-    private static $extensions = [
-        Versioned::class,
-        DataObjectPurgeable::class
-    ];
-
-    public function AbsoluteLink() {
-        return "https://example.com/testversionedrecord.html";
-    }
-
-    public function SomeRelatedLink() {
-        return "https://example.com/testversionedrecord.html?alternateformat=1";
-    }
-
-    public function getPurgeUrlList() {
-        return [
-            $this->AbsoluteLink(),
-            $this->SomeRelatedLink()
-        ];
-    }
-
-    /**
-     * This record has a URL that is support
-     */
-    public function getPurgeTypes() : array {
-        return [
-            CloudflarePurgeService::TYPE_URL
-        ];
     }
 
 }
