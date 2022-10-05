@@ -238,10 +238,6 @@ class CloudflarePurgeService extends Cloudflare {
         static::removeReadingMode($urls);
 
         $purge_urls = [];
-        $base_url = $this->config()->get('base_url');
-        if (!$base_url) {
-            $base_url = Director::absoluteBaseURL();
-        }
 
         foreach($urls as $url) {
             $purge_urls[] = Director::absoluteURL($url);
