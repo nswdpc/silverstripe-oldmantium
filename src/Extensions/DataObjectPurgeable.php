@@ -3,6 +3,7 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\ClassInfo;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\DatetimeField;
@@ -134,12 +135,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     final public function getPurgeValues() : array {
 
         // keys are the options that can be sent to purge_cache
-        $result = [
-            'files' => [],
-            'tags' => [],
-            'hosts' => [],
-            'prefixes' => [],
-        ];
+        $result = [];
 
         // mapping internal TYPE_* contants to purge_cache options
         $mappings = CloudflarePurgeService::getTypeMappings();
@@ -153,12 +149,15 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         // Logger::log("Cloudflare: getPurgeValues types=" . json_encode($types) );
 
         foreach($types as $type) {
-            // a $type is one of the TYPE_* constants
-            if( isset( $mappings[ $type ] ) && array_key_exists($mappings[ $type ], $result) ) {
-                // e.g result['tags'] = ['blog','support','security']
-                // result is keyed by the allowed purge_cache options
-                $result[ $mappings[ $type ] ] = $this->owner->getPurgeTypeValues( $type );
-                // Logger::log("Cloudflare: getPurgeValues returning " .  count($result[ $mappings[ $type ] ]) . " records for type {$type}");
+            // a $type is one of the TYPE_* constant values
+            if( isset( $mappings[ $type ] ) ) {
+                /**
+                 * Example $type=Tag, mapping type = "tags"
+                 * e.g $result[ 'Tag' ] => ['blog','support','security'] ]
+                 * result is keyed by the allowed purge_cache options
+                 */
+                $result[ $type ] = $this->owner->getPurgeTypeValues( $type );
+                // Logger::log("Cloudflare: getPurgeValues returning " .  count($result[ $type ]) . " records for type {$type}");
             }
         }
 
@@ -166,8 +165,9 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     }
 
     /**
-     * Only the record knows which values to return for the given type
-     * For the moment, return URLs that can be purged
+     * Support owner records that only purge their URLs
+     * The owner record can implement a method of this name (see PurgeRecord for example)
+     * to return specific purge values
      * @return array
      */
     public function getPurgeTypeValues($type) : array {
@@ -240,49 +240,33 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     }
 
     /**
-     * Attempt to return an instance of the job related to the Task
-     * @param string $type being one of the PurgeRecord::TYPE_ constants
-     * @return AbstractRecordCachePurgeJob|false
+     * Attempt to return the classname for the job linked to the purge type
+     * @param string $type being one of the CloudflarePurgeService::TYPE_ constant values
+     * @return string|false
      */
     public function getJobClassForType($type) {
-        $option = CloudflarePurgeService::getOptionForType($type);
-        if(!$option) {
-            // Logger::log("Cloudflare: getJobClassForType no option found for type={$type}");
-            return false;
-        }
-        if($option == CloudflarePurgeService::TYPE_ENTIRE) {
-            // Logger::log("Cloudflare: ignoring request by " . get_class($this->owner) . " to create an EntireCachePurgeJob", "NOTICE");
-            return false;
-        }
-        $class = "NSWDPC\\Utilities\\Cloudflare\\{$option}CachePurgeJob";
+        $class = "NSWDPC\\Utilities\\Cloudflare\\{$type}CachePurgeJob";
         if(class_exists($class)) {
             return $class;
+        } else {
+            return false;
         }
-        // Logger::log("Cloudflare: getJobClassForType no matching job found for class={$class}");
-        return false;
     }
 
     /**
      * Based on the purge values returned for this record, create jobs to assist with record purging
-     * @return array
+     * @return array jobs created
      */
-    public function getPurgeJobs($reason) {
+    public function getPurgeJobs($reason): array {
         $jobs = [];
         // get all possible values this record may have, keys define jobs
         $values  = $this->owner->getPurgeValues();
         // no values means no jobs
         if(empty($values)) {
-            // Logger::log("Cloudflare: getPurgeJobs there are no purge values for reason={$reason}");
             return [];
         }
-        foreach($values as $key => $value) {
-            if(empty($value)) {
-                // value is an array of possible things to purge
-                // Logger::log("Cloudflare: getPurgeJobs nothing found to purge for type={$key}");
-                continue;
-            }
-            // Logger::log("Cloudflare: getPurgeJobs getting job for type={$key}");
-            $class = self::getJobClassForType($key);
+        foreach($values as $type => $spec) {
+            $class = self::getJobClassForType($type);
             if($class && class_exists($class)) {
                 $job = Injector::inst()->createWithArgs(
                         $class,
@@ -296,9 +280,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                     continue;
                 }
                 $jobs[] = $job;
-            } else {
-                // Logger::log("Cloudflare: getPurgeJobs no job found for type {$key}");
-                continue;
             }
         }
         return $jobs;
@@ -312,7 +293,9 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     final public function createPurgeJobs($reason, \DateTime $start = null) {
         try {
             $jobs_queued = [];
-            if (!Cloudflare::config()->enabled) {
+
+            $client = Injector::inst()->get( Cloudflare::class );
+            if ( !Config::inst()->get( get_class($client), 'enabled') ) {
                 Logger::log("Cloudflare: createPurgeJobs called but Cloudflare.enabled=off","NOTICE");
                 return false;
             }

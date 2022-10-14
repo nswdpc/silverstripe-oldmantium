@@ -12,33 +12,37 @@ use SilverStripe\Dev\TestOnly;
 class MockCloudflarePurgeService extends CloudflarePurgeService implements TestOnly
 {
 
-    private static $enabled = true;
-
-    private static $email = "test@example.com";// legacy
-    private static $auth_key = "KEY-test-123-abcd";// legacy
-    private static $base_url = '';
-
-    private static $auth_token = "TOKEN-test-123-abcd";
-
-    private static $zone_id = "test-zone";
-
-    private static $endpoint_base_uri = "";
-
-    protected $adapter;
-
     /**
      * Retrieve a cloudflare/sdk client
      * @return NSWDPC\Utilities\Cloudflare\Tests\MockCloudflareAdapter
      */
     public function getSdkClient() : ?CloudflareGuzzleAdapter {
-        if($auth = $this->getAuthHandler()) {
-            $this->adapter = new MockCloudflareAdapter($auth);
+
+        if($this->sdk_client) {
+            return $this->sdk_client;
         }
-        return $this->adapter;
+
+        if($auth = $this->getAuthHandler()) {
+            $this->sdk_client = new MockCloudflareAdapter($auth);
+        }
+
+        return $this->sdk_client;
     }
 
+    /**
+     * Helper method to get SKD client
+     * @return NSWDPC\Utilities\Cloudflare\Tests\MockCloudflareAdapter
+     */
     public function getAdapter() {
-        return $this->adapter;
+        return $this->getSdkClient();
+    }
+
+    /**
+     * Return the absolute path to the test public resources dir
+     * @return string
+     */
+    protected function getPublicResourcesDir() : string {
+        return dirname(__FILE__) . "/public/_resources/";
     }
 
 }

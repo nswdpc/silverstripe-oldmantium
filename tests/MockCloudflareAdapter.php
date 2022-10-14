@@ -1,7 +1,8 @@
 <?php
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
-use Cloudflare\API\Adapter\Guzzle;
+use NSWDPC\Utilities\Cloudflare\Logger;
+use Cloudflare\API\Adapter\Guzzle as CloudflareGuzzleAdapter;
 use Cloudflare\API\Adapter\JSONException;
 use Cloudflare\API\Adapter\ResponseException;
 use Cloudflare\API\Auth\Auth;
@@ -11,7 +12,11 @@ use Psr\Http\Message\ResponseInterface;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\Cloudflare\Cloudflare;
 
-class MockCloudflareAdapter extends Guzzle {
+/**
+ * Mock adapter to test requests and responses
+ * @author James
+ */
+class MockCloudflareAdapter extends CloudflareGuzzleAdapter {
 
     protected $mock_client;
     protected $uri;
@@ -20,23 +25,21 @@ class MockCloudflareAdapter extends Guzzle {
     protected $headers;
     protected $client_headers;
 
-    const LOCALHOST_URI = 'http://localhost';
-
     /**
      * @inheritDoc
      */
     public function __construct(Auth $auth, string $baseURI = null)
     {
+        // Mock API endpoint
+        $baseURI = 'https://localhost/client/v4/';
+        // store auth headers
         $this->client_headers = $auth->getHeaders();
+        // create a mock client
         $this->mock_client = new Client([
-            'base_uri' => $this->getEndpointUri(),
+            'base_uri' => $baseURI,
             'headers' => $this->client_headers,
             'Accept' => 'application/json'
         ]);
-    }
-
-    protected function getEndpointUri() {
-        return self::LOCALHOST_URI;
     }
 
     public function request(string $method, string $uri, array $data = [], array $headers = [])
@@ -51,11 +54,11 @@ class MockCloudflareAdapter extends Guzzle {
         $this->headers = $headers;
 
 
-        $status = 200;
-        $headers = $headers;
-        $body = $this->getBodyByUri($uri);
-        $protocol = '1.1';
-        $response = new Response($status, $headers, $body, $protocol);
+        $responseStatus = 200;
+        $responseHeaders = [];
+        $responseBody = $this->getBodyByUri($uri);
+        $responseProtocol = '1.1';
+        $response = new Response($responseStatus, $responseHeaders, $responseBody, $responseProtocol);
 
         $this->mockCheckError($response);
 

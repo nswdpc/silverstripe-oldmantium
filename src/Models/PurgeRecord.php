@@ -8,6 +8,7 @@ use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\ValidationException;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
@@ -33,18 +34,19 @@ class PurgeRecord extends DataObject implements PermissionProvider {
 
     private static $db = [
         'Title' => 'Varchar(255)',
-        'Type' => 'Varchar(8)',
+        'Type' => 'Varchar(16)',
         'TypeValues' => 'MultiValueField'
     ];
 
     private static $summary_fields = [
         'Title' => 'Title',
-        'Type' => 'Type',
+        'TypeString' => 'Type',
         'TypeValues.csv' => 'Values',
     ];
 
     /**
      * Get available types to select from in the administration screen
+     * The values of these types map to *CachePurgeJob class names
      * @return array
      */
     public function getTypes() {
@@ -52,13 +54,29 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             CloudflarePurgeService::TYPE_HOST,
             CloudflarePurgeService::TYPE_PREFIX,
             CloudflarePurgeService::TYPE_URL,
-            CloudflarePurgeService::TYPE_TAG
+            CloudflarePurgeService::TYPE_TAG,
+            CloudflarePurgeService::TYPE_FILE_EXTENSION,
+            CloudflarePurgeService::TYPE_IMAGE,
+            CloudflarePurgeService::TYPE_CSS_JAVASCRIPT,
         ];
         $result = [];
         foreach($types as $type) {
-            $result[ $type ] = _t(__CLASS__ . '.TYPE_' . strtoupper($type), $type);
+            $result[ $type ] = $this->getTypeString($type);
         }
         return $result;
+    }
+
+    /**
+     * Helper method to get translated version of Type value
+     * @return string
+     */
+    public function getTypeString($type = null) : string {
+        $type = $type ?: $this->Type;
+        if(!$type) {
+            return _t(__CLASS__ . '.UNKNOWN', 'Unknown');
+        } else {
+            return _t(__CLASS__ . '.TYPE_' . strtoupper($type), $type);
+        }
     }
 
     public function getCMSFields()
@@ -131,6 +149,24 @@ class PurgeRecord extends DataObject implements PermissionProvider {
         return AbstractRecordCachePurgeJob::RECORD_NAME;
     }
 
+    /**
+     * Retrict types that require values
+     */
+    public function requiresTypeValue() : bool {
+        switch($this->Type) {
+            case CloudflarePurgeService::TYPE_IMAGE:
+            case CloudflarePurgeService::TYPE_CSS_JAVASCRIPT:
+                return false;
+                break;
+            default:
+                return true;
+                break;
+        }
+    }
+
+    /**
+     * Actions to preform pre-write
+     */
     public function onBeforeWrite()
     {
         parent::onBeforeWrite();
@@ -138,8 +174,15 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             $this->TypeValues = null;
         }
 
+        $values = $this->getPurgeTypeValues( $this->Type );
+
+        if(count($values) == 0 && $this->requiresTypeValue()) {
+            throw new ValidationException(
+                _t(__CLASS__ . '.PROVIDE_VALUES', 'Please provide one or more values')
+            );
+        }
+
         if($this->Type == CloudflarePurgeService::TYPE_URL) {
-            $values = $this->getPurgeTypeValues( $this->Type );
             if(is_array($values)) {
                 foreach($values as $i => $value) {
                     $values[$i] = Director::absoluteURL($value);
