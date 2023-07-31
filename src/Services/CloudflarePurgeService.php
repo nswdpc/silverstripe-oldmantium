@@ -118,7 +118,7 @@ class CloudflarePurgeService extends Cloudflare {
 
     /**
      * Remove reading mode from URLs
-     * @param array each value is a string URL that can be parsed by parse_url()
+     * @param array $urls each value is a string URL that can be parsed by parse_url()
      * @return void
      */
     public static function removeReadingMode( array &$urls ) {
@@ -368,7 +368,7 @@ class CloudflarePurgeService extends Cloudflare {
 
     /**
      * Given a page, purge its absolute links
-     * @param SiteTree page record
+     * @param SiteTree $page page record
      * @return CloudflareResult|false
      */
     public function purgePage(SiteTree $page) {
