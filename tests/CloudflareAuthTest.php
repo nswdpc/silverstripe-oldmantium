@@ -52,6 +52,7 @@ class CloudflareAuthTest extends SapphireTest
     public function testAPIKeyAuthAdapter() {
         Config::modify()->set( MockCloudflarePurgeService::class, 'auth_token', null);
         Config::modify()->set( MockCloudflarePurgeService::class, 'auth_key', 'the auth key');
+        Config::modify()->set( MockCloudflarePurgeService::class, 'email', 'some.one@app.example.com');
         $authAdapter = $this->client->getAuthHandler();
         $this->assertInstanceOf(APIKey::class, $authAdapter);
         $sdkClient = $this->client->getSdkClient();
