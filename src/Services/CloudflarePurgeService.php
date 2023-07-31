@@ -102,7 +102,7 @@ class CloudflarePurgeService extends Cloudflare {
     /**
      * @return CloudflareResult|null
      */
-    protected function result($body = null, bool $response, array $values = []) {
+    protected function result($body, bool $response, array $values = []) {
         $errors = isset($body->errors) && is_array($body->errors) ? $body->errors : [];
         $result = new CloudflareResult(
             $values,// what was passed in
