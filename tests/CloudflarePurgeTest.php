@@ -21,7 +21,6 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
 /**
  * Abstract test class for purge testing
  * Test functionality provided by the module
- * Note: requires a service to accept HTTP requests
  * @author James
  */
 abstract class CloudflarePurgeTest extends SapphireTest

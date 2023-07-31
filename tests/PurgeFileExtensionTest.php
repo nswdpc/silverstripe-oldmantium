@@ -7,6 +7,8 @@ use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\FileExtensionCachePurgeJob;
+use SilverStripe\Control\Director;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
@@ -142,6 +144,37 @@ class PurgeFileExtensionTest extends CloudflarePurgeTest
         $descriptors = $purge->getCurrentPurgeJobDescriptors( [ FileExtensionCachePurgeJob::class ] );
         $this->assertEquals(0, $descriptors->count(), "Jobs count should be 0 after delete");
 
+    }
+
+    public function testGetPublicFilesByExtension() {
+        $extensions = ['js','png'];
+        $expected = [
+            '_resources/themes/website/assets/banner.png',
+            '_resources/themes/website/assets/app.js',
+            '_resources/vendor/other-org/module/assets/image.png',
+            '_resources/vendor/other-org/module/assets/script.js',
+            '_resources/vendor/org/module/assets/image.png',
+            '_resources/vendor/org/module/assets/script.js'
+        ];
+        $result = $this->client->getPublicFilesByExtension( $extensions );
+        sort($result);
+        sort($expected);
+        $this->assertEquals($expected, $result);
+
+        Config::modify()->update( Director::class, 'alternate_base_url', 'https://something.example.com/');
+
+        $urls = $this->client->prepUrls($result);
+        $expectedUrls = [
+            'https://something.example.com/_resources/themes/website/assets/banner.png',
+            'https://something.example.com/_resources/themes/website/assets/app.js',
+            'https://something.example.com/_resources/vendor/other-org/module/assets/image.png',
+            'https://something.example.com/_resources/vendor/other-org/module/assets/script.js',
+            'https://something.example.com/_resources/vendor/org/module/assets/image.png',
+            'https://something.example.com/_resources/vendor/org/module/assets/script.js'
+        ];
+        sort($urls);
+        sort($expectedUrls);
+        $this->assertEquals($expectedUrls, $urls);
     }
 
 }

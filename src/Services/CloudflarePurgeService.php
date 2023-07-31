@@ -201,6 +201,25 @@ class CloudflarePurgeService extends Cloudflare {
     }
 
     /**
+     * Convert URLs to absolute
+     */
+    public function prepUrls(array $urls) : array {
+
+        // Remove any reading mode added to the URL in query string
+        static::removeReadingMode($urls);
+
+        // ensure URLs are absolute
+        array_walk(
+            $urls,
+            function(&$value, $key) {
+                $value = Director::absoluteURL($value);
+            }
+        );
+
+        return $urls;
+    }
+
+    /**
      * Purge all from zone by creating a cache purge job in the future (which handles the purging)
      * The idea here is that job will be created in the future with a configured delay (hrs)
      * This allows job cancellation and manual actioning
@@ -295,16 +314,7 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
 
-        // Remove any reading mode added to the URL in query string
-        static::removeReadingMode($urls);
-
-        // ensure URLs are absolute
-        array_walk(
-            $urls,
-            function(&$value, $key) {
-                $value = Director::absoluteURL($value);
-            }
-        );
+        $urls = $this->prepUrls($urls);
 
         $zones = new Zones( $adapter );
 
