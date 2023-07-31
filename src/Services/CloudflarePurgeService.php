@@ -476,7 +476,7 @@ class CloudflarePurgeService extends Cloudflare {
         if(count($extensions) == 0) {
             return null;
         }
-        $files = $this->getPublicFilesByExtension($extensions, false);
+        $files = $this->getPublicFilesByExtension($extensions);
         if(count($files) == 0) {
             return null;
         }
