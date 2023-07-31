@@ -3,12 +3,12 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Injector\Injector;
-use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Shorthand job for purging files by extensions returned from {@link CloudflarePurgeService::purgeCSSAndJavascript()}
  * Triggered by publishing/unpublishing a PurgeRecord of type 'CSSJavascript'
  * @author James
+ * @deprecated will be removed in an upcoming release
  */
 class CSSJavascriptCachePurgeJob extends AbstractRecordCachePurgeJob
 {

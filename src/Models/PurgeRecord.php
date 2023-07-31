@@ -22,22 +22,38 @@ use Symbiote\MultiValueField\ORM\FieldType\MultiValueField;
 /**
  * A PurgeRecord
  * {@link NSWDPC\Utilities\Cloudflare\DataObjectPurgeable} provides event handling for this class
- * @author james.ellis@dpc.nsw.gov.au
+ * @author James
  */
 
 class PurgeRecord extends DataObject implements PermissionProvider {
 
+    /**
+     * @inheritdoc
+     */
     private static $table_name = 'CloudflarePurgeRecord';
 
+    /**
+     * @inheritdoc
+     */
     private static $singular_name = 'Cloudflare purge record';
+
+    /**
+     * @inheritdoc
+     */
     private static $plural_name = 'Cloudflare purge records';
 
+    /**
+     * @inheritdoc
+     */
     private static $db = [
         'Title' => 'Varchar(255)',
         'Type' => 'Varchar(16)',
         'TypeValues' => 'MultiValueField'
     ];
 
+    /**
+     * @inheritdoc
+     */
     private static $summary_fields = [
         'Title' => 'Title',
         'TypeString' => 'Type',
@@ -55,9 +71,9 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             CloudflarePurgeService::TYPE_PREFIX,
             CloudflarePurgeService::TYPE_URL,
             CloudflarePurgeService::TYPE_TAG,
-            CloudflarePurgeService::TYPE_FILE_EXTENSION,
-            CloudflarePurgeService::TYPE_IMAGE,
-            CloudflarePurgeService::TYPE_CSS_JAVASCRIPT,
+            CloudflarePurgeService::TYPE_FILE_EXTENSION,// @deprecated
+            CloudflarePurgeService::TYPE_IMAGE,// @deprecated
+            CloudflarePurgeService::TYPE_CSS_JAVASCRIPT,// @deprecated
         ];
         $result = [];
         foreach($types as $type) {

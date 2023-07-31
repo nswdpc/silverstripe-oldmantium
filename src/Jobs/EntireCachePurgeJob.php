@@ -7,7 +7,8 @@ use Cloudflare\API\Endpoints\Zones;
 /**
  * Purge all records in zone
  * NOTE: this can have negative consequences for system load and availability on a high traffic website
- * @author James Ellis <james.ellis@dpc.nsw.gov.au>
+ * @author James
+ * @deprecated will be removed in an upcoming release
  */
 class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
 {
@@ -38,6 +39,9 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
         try {
             $client = $this->getPurgeClient();
             $adapter = $client->getSdkClient();
+            if(!$adapter) {
+                throw new \Exception("Client adapter not available. Is enabled=true?");
+            }
             $zones = new Zones( $adapter );
             $zone_id = $client->getZoneIdentifier();
             $msg = "Cloudflare: purging all from zone {$zone_id}";

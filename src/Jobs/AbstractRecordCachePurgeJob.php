@@ -16,7 +16,7 @@ use Exception;
 
 /**
  * Abstract record cache purge job
- * @author James Ellis <james.ellis@dpc.nsw.gov.au>
+ * @author James
  */
 abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements QueuedJob
 {

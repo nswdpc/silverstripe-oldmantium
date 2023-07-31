@@ -11,7 +11,6 @@ use SilverStripe\Forms\NumericField;
 use Silverstripe\ORM\ArrayList;
 use Silverstripe\ORM\DataExtension;
 use SilverStripe\Versioned\Versioned;
-use Symbiote\Cloudflare\CloudflareResult;
 use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
@@ -19,17 +18,34 @@ use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 
 /**
  * Extension that decorates a purgeable dataobject, currently support URLs only
- * @author james.ellis@dpc.nsw.gov.au
+ * @author James
  */
 
 class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
+    /**
+     * @var string
+     */
     const REASON_WRITE = 'write';
+
+    /**
+     * @var string
+     */
     const REASON_DELETE = 'delete';
 
+    /**
+     * @var string
+     */
     const REASON_PUBLISH = 'publish';
+
+    /**
+     * @var string
+     */
     const REASON_UNPUBLISH = 'unpublish';
 
+    /**
+     * @var array
+     */
     private static $db = [
         'CachePurgeAt' => 'Datetime', // add ability to purge dataobject at a certain date / time
         'CacheMaxAge' => 'Double'// minutes TTL
@@ -122,7 +138,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
     /**
      * The name of the record for usage in QueuedJobs
-     * @throws \Exception
      */
     public function getPurgeRecordName() : string {
         return AbstractRecordCachePurgeJob::RECORD_NAME;

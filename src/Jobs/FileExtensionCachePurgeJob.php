@@ -9,6 +9,7 @@ use Symbiote\Cloudflare\Cloudflare;
  * Job purges URLs linked to the provided file extensions
  * Triggered by publishing/unpublishing a PurgeRecord of type 'FileExtension'
  * @author James
+ * @deprecated will be removed in an upcoming release
  */
 class FileExtensionCachePurgeJob extends AbstractRecordCachePurgeJob
 {

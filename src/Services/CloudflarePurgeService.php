@@ -97,6 +97,11 @@ class CloudflarePurgeService extends Cloudflare {
     public function __construct()
     {
         parent::__construct();
+        /**
+         * Avoid using parent client class
+         * See: self::getSdkClient()
+         */
+        $this->client = null;// avoid using parent client
     }
 
     /**
@@ -169,6 +174,7 @@ class CloudflarePurgeService extends Cloudflare {
         if($authToken) {
             $auth = new APIToken($authToken);
         } else if($authKey) {
+            Logger::log("Cloudflare purge handling should be configured with an auth_token", "NOTICE");
             $auth = new APIKey(
                 $this->config()->get('email'),
                 $authKey
@@ -182,6 +188,9 @@ class CloudflarePurgeService extends Cloudflare {
      * @return CloudflareGuzzleAdapter|null
      */
     public function getSdkClient() : ?CloudflareGuzzleAdapter {
+        if(!self::config()->get('enabled')) {
+            return null;
+        }
         if($this->sdk_client) {
             return $this->sdk_client;
         }
@@ -197,6 +206,7 @@ class CloudflarePurgeService extends Cloudflare {
      * This allows job cancellation and manual actioning
      * Only members with the permission ADMIN may create this job (in this method)
      * @return CloudflareResult|null
+     * @deprecated will be removed in an upcoming release
      */
     public function purgeAll()
     {
@@ -231,7 +241,11 @@ class CloudflarePurgeService extends Cloudflare {
         if(empty($tags)) {
             return false;
         }
-        $zones = new Zones( $this->getSdkClient() );
+        $adapter = $this->getSdkClient();
+        if(!$adapter) {
+            return false;
+        }
+        $zones = new Zones( $adapter );
         // Logger::log("Cloudflare: purging tags " . implode(",", $tags));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
@@ -250,7 +264,11 @@ class CloudflarePurgeService extends Cloudflare {
         if(empty($hosts)) {
             return false;
         }
-        $zones = new Zones( $this->getSdkClient() );
+        $adapter = $this->getSdkClient();
+        if(!$adapter) {
+            return false;
+        }
+        $zones = new Zones( $adapter );
         // Logger::log("Cloudflare: purging hosts " . implode(",", $hosts));
         $result = $zones->cachePurge(
             $this->getZoneIdentifier(),
@@ -272,6 +290,11 @@ class CloudflarePurgeService extends Cloudflare {
             return false;
         }
 
+        $adapter = $this->getSdkClient();
+        if(!$adapter) {
+            return false;
+        }
+
         // Remove any reading mode added to the URL in query string
         static::removeReadingMode($urls);
 
@@ -283,7 +306,7 @@ class CloudflarePurgeService extends Cloudflare {
             }
         );
 
-        $zones = new Zones( $this->getSdkClient() );
+        $zones = new Zones( $adapter );
 
         // Logger::log("Cloudflare: zones->cachePurge() with " . count($urls) . " URLs");
         $result = $zones->cachePurge(
@@ -301,14 +324,21 @@ class CloudflarePurgeService extends Cloudflare {
      * @return CloudflareResult|false
      */
     public function purgePrefixes(array $prefixes) {
-        if(empty($prefixes)) {
-            return false;
-        }
         try {
+
+            if(empty($prefixes)) {
+                return false;
+            }
+
             $adapter = $this->getSdkClient();
+            if(!$adapter) {
+                return false;
+            }
+
             $options = [
                 'prefixes' => $prefixes
             ];
+
             // Logger::log("Cloudflare: purging prefixes " . implode(",", $prefixes));
             $user = $adapter->post('zones/' . $this->getZoneIdentifier() . '/purge_cache', $options);
             $body = json_decode($user->getBody());
@@ -424,6 +454,7 @@ class CloudflarePurgeService extends Cloudflare {
      * The CF API sets a 30 URL limit per purge request
      * This is fundementally the same as calling purgeURLs with 30 URLs
      * @return CloudflareResult|null
+     * @deprecated will be removed in an upcoming release
      */
     public function purgeImages() {
         $categories = File::config()->get('app_categories');
@@ -438,6 +469,7 @@ class CloudflarePurgeService extends Cloudflare {
      * Purge files by extensions
      * @param array $extensions
      * @return CloudflareResult|null
+     * @deprecated will be removed in an upcoming release
      */
     protected function purgeFilesByExtensions(array $extensions)
     {
@@ -462,6 +494,7 @@ class CloudflarePurgeService extends Cloudflare {
     /**
      * Shorthand for purging css, js and json files
      * @return CloudflareResult|null
+     * @deprecated will be removed in an upcoming release
      */
     public function purgeCSSAndJavascript()
     {

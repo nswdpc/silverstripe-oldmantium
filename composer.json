@@ -32,5 +32,18 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5"
+    },
+    "autoload": {
+      "psr-4": {
+        "NSWDPC\\Utilities\\Cloudflare\\": [
+            "src/Controllers/",
+            "src/Extensions/",
+            "src/Interfaces/",
+            "src/Jobs/",
+            "src/Models/",
+            "src/Services/"
+        ],
+        "NSWDPC\\Utilities\\Cloudflare\\Tests\\": "tests/"
+      }
     }
 }

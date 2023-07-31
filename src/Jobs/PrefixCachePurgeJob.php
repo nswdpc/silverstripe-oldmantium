@@ -8,7 +8,7 @@ use Symbiote\Cloudflare\Cloudflare;
 /**
  * Purge cache by prefix or prefixes
  * Note: requires a CF Enterprise account
- * @author James Ellis <james.ellis@dpc.nsw.gov.au>
+ * @author James
  */
 class PrefixCachePurgeJob extends AbstractRecordCachePurgeJob
 {

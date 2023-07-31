@@ -7,7 +7,7 @@ use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Job purges assocaited record URLs
- * @author James Ellis <james.ellis@dpc.nsw.gov.au>
+ * @author James
  */
 class URLCachePurgeJob extends AbstractRecordCachePurgeJob
 {

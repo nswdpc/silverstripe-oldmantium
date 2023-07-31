@@ -9,6 +9,7 @@ use Symbiote\Cloudflare\Cloudflare;
  * Shorthand job purges URLs linked to common image extensions
  * Triggered by publishing/unpublishing a PurgeRecord of type 'Image'
  * @author James
+ * @deprecated will be removed in an upcoming release
  */
 class ImageCachePurgeJob extends AbstractRecordCachePurgeJob
 {

@@ -47,6 +47,7 @@ class CloudflareAuthTest extends SapphireTest
 
     /**
      * Test that the service returns the APIKey adapter when no token is present
+     * This is the legacy behaviour to be removed
      */
     public function testAPIKeyAuthAdapter() {
         Config::modify()->set( MockCloudflarePurgeService::class, 'auth_token', null);
