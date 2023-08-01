@@ -15,6 +15,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Core\Path;
 use SilverStripe\Security\Security;
 use SilverStripe\Security\Permission;
+use SilverStripe\Versioned\Versioned;
 
 use Symbiote\Cloudflare\Cloudflare;// @deprecate
 use Symbiote\Cloudflare\CloudflareResult;// @deprecate
@@ -447,7 +448,10 @@ class CloudflarePurgeService extends Cloudflare {
 
         );
 
-        $files = File::get()->filter([
+        $files = Versioned::get_by_stage(
+            File::class,
+            Versioned::LIVE
+        )->filter([
             'Name:EndsWith' => $prefixedExtensions
         ]);
 
