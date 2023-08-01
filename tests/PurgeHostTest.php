@@ -34,7 +34,7 @@ class PurgeHostTest extends CloudflarePurgeTest
         ]);
 
         $purge->write();
-        $purge->doPublish();
+        $purge->publishSingle();
 
         $values = $purge->getPurgeTypeValues($purge->Type);
 

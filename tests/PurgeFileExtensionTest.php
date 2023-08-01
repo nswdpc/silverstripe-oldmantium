@@ -7,6 +7,7 @@ use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\FileExtensionCachePurgeJob;
+use SilverStripe\Assets\File;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
@@ -50,7 +51,7 @@ class PurgeFileExtensionTest extends CloudflarePurgeTest
         ]);
 
         $purge->write();
-        $purge->doPublish();
+        $purge->publishSingle();
 
         $values = $purge->getPurgeTypeValues($purge->Type);
 
@@ -147,14 +148,15 @@ class PurgeFileExtensionTest extends CloudflarePurgeTest
     }
 
     public function testGetPublicFilesByExtension() {
-        $extensions = ['js','png'];
+        $extensions = ['js','png', 'pdf'];
         $expected = [
             '_resources/themes/website/assets/banner.png',
             '_resources/themes/website/assets/app.js',
             '_resources/vendor/other-org/module/assets/image.png',
             '_resources/vendor/other-org/module/assets/script.js',
             '_resources/vendor/org/module/assets/image.png',
-            '_resources/vendor/org/module/assets/script.js'
+            '_resources/vendor/org/module/assets/script.js',
+            '/assets/PurgeFileExtensionTest/file.pdf'
         ];
         $result = $this->client->getPublicFilesByExtension( $extensions );
         sort($result);
@@ -170,11 +172,30 @@ class PurgeFileExtensionTest extends CloudflarePurgeTest
             'https://something.example.com/_resources/vendor/other-org/module/assets/image.png',
             'https://something.example.com/_resources/vendor/other-org/module/assets/script.js',
             'https://something.example.com/_resources/vendor/org/module/assets/image.png',
-            'https://something.example.com/_resources/vendor/org/module/assets/script.js'
+            'https://something.example.com/_resources/vendor/org/module/assets/script.js',
+            'https://something.example.com/assets/PurgeFileExtensionTest/file.pdf'
         ];
         sort($urls);
         sort($expectedUrls);
         $this->assertEquals($expectedUrls, $urls);
+
+
+        // unpublish
+        $file = $this->objFromFixture(File::class, 'pdf');
+        $file->doUnpublish();
+
+        $expected = [
+            '_resources/themes/website/assets/banner.png',
+            '_resources/themes/website/assets/app.js',
+            '_resources/vendor/other-org/module/assets/image.png',
+            '_resources/vendor/other-org/module/assets/script.js',
+            '_resources/vendor/org/module/assets/image.png',
+            '_resources/vendor/org/module/assets/script.js'
+        ];
+        $result = $this->client->getPublicFilesByExtension( $extensions );
+        sort($result);
+        sort($expected);
+        $this->assertEquals($expected, $result);
     }
 
 }

@@ -33,7 +33,7 @@ class PurgeURLTest extends CloudflarePurgeTest
         ]);
 
         $purge->write();
-        $purge->doPublish();
+        $purge->publishSingle();
 
         $values = $purge->TypeValues;
 

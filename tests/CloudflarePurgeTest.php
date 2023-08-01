@@ -107,7 +107,7 @@ abstract class CloudflarePurgeTest extends SapphireTest
             /** @var File $file */
             $file = DataObject::get_by_id(File::class, $fileID);
             $file->setFromString(str_repeat('x', 1000000), $file->getFilename());
-            $file->doPublish();
+            $file->publishSingle();
         }
     }
 
