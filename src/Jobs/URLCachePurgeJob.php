@@ -3,7 +3,6 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Injector\Injector;
-use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Job purges assocaited record URLs

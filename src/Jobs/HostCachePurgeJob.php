@@ -3,8 +3,6 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Injector\Injector;
-use Symbiote\Cloudflare\Cloudflare;
-use Symbiote\Cloudflare\CloudflareResult;
 
 /**
  * Purge cache by host or hosts

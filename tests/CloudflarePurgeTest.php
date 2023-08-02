@@ -10,11 +10,11 @@ use SilverStripe\Assets\File;
 use SilverStripe\Assets\Folder;
 use SilverStripe\Assets\Image;
 use Silverstripe\Assets\Dev\TestAssetStore;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Versioned\Versioned;
-use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
@@ -31,13 +31,8 @@ abstract class CloudflarePurgeTest extends SapphireTest
     protected $client;
 
     protected $enabled = true;
-
-    protected $email = "test@example.com";// legacy
-    protected $auth_key = "KEY-test-123-abcd";// legacy
-    protected $base_url = '';
     protected $auth_token = "TOKEN-test-123-abcd";
     protected $zone_id = "test-zone";
-    protected $endpoint_base_uri = "";
 
     protected static $extra_dataobjects = [
         TestVersionedRecord::class,
@@ -60,31 +55,27 @@ abstract class CloudflarePurgeTest extends SapphireTest
 
         // Mock a CloudflarePurgeService
         Injector::inst()->load([
-            Cloudflare::class => [
+            CloudflarePurgeService::class => [
                 'class' => MockCloudflarePurgeService::class,
             ]
         ]);
 
-        MockCloudflarePurgeService::config()->update('enabled', $this->enabled);
+        Config::modify()->update(CloudflarePurgeService::class, 'enabled', $this->enabled);
 
         // Token based auth
-        MockCloudflarePurgeService::config()->update('auth_token', $this->auth_token);
+        Config::modify()->update(CloudflarePurgeService::class, 'auth_token', $this->auth_token);
 
         // Zone to purge
-        MockCloudflarePurgeService::config()->update('zone_id', $this->zone_id);
-
-        // legacy auth
-        MockCloudflarePurgeService::config()->update('email', $this->email);
-        MockCloudflarePurgeService::config()->update('auth_key', $this->auth_key);
+        Config::modify()->update(CloudflarePurgeService::class, 'zone_id', $this->zone_id);
 
 
-        $this->client = Injector::inst()->get( Cloudflare::class );
+        $this->client = Injector::inst()->get( CloudflarePurgeService::class );
 
         $this->assertTrue($this->client instanceof MockCloudflarePurgeService, "Client is not a MockCloudflarePurgeService");
 
         $adapter = $this->client->getAdapter();
 
-        $this->assertTrue($adapter instanceof MockCloudflareAdapter, "SDK client is not a MockCloudflareAdapter");
+        $this->assertTrue($adapter instanceof MockApiClient, "Adapter is not a MockApiClient");
 
         $this->assertTrue( MockCloudflarePurgeService::config()->get('enabled') );
 
@@ -124,6 +115,21 @@ abstract class CloudflarePurgeTest extends SapphireTest
     protected function getQueuedJobService()
     {
         return singleton(QueuedJobService::class);
+    }
+
+    /**
+     * Check the request against what was provided
+     */
+    protected function validatePurgeRequest(PurgeRecord $record, string $type) {
+        $data = $this->client->getAdapter()->getMockRequestData();
+        $values = $record->getPurgeTypeValues( $record->Type );
+        $this->assertEquals($values, $data['options']['json'][ $type ], "Purge type={$type} request values match record getPurgeTypeValues");
+        $this->assertEquals("http://localhost/client/v4/zones/{$this->client->getZoneIdentifier()}/purge_cache", $data['url'], "URI mismatch");
+
+        $this->assertEquals(
+            "Bearer " . $this->client->config()->get('auth_token'),
+            $data['options']['headers']['Authorization']
+        );
     }
 
 }

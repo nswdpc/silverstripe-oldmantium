@@ -11,7 +11,6 @@ use SilverStripe\Forms\NumericField;
 use Silverstripe\ORM\ArrayList;
 use Silverstripe\ORM\DataExtension;
 use SilverStripe\Versioned\Versioned;
-use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
@@ -309,9 +308,9 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         try {
             $jobs_queued = [];
 
-            $client = Injector::inst()->get( Cloudflare::class );
-            if ( !Config::inst()->get( get_class($client), 'enabled') ) {
-                Logger::log("Cloudflare: createPurgeJobs called but Cloudflare.enabled=off","NOTICE");
+            $client = Injector::inst()->get( CloudflarePurgeService::class );
+            if ( !Config::inst()->get( CloudflarePurgeService::class, 'enabled') ) {
+                Logger::log("Cloudflare: createPurgeJobs called but not enabled in configuration","NOTICE");
                 return false;
             }
             if(!$start) {

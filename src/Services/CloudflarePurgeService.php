@@ -2,39 +2,31 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use Cloudflare\API\Auth\Auth;
-use Cloudflare\API\Auth\APIKey;
-use Cloudflare\API\Auth\APIToken;
-use Cloudflare\API\Adapter\Guzzle as CloudflareGuzzleAdapter;
-use Cloudflare\API\Endpoints\Zones;
+use GuzzleHttp\Client as GuzzleHttpClient;
 use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
 use SilverStripe\Assets\File;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Controller;
+use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Path;
 use SilverStripe\Security\Security;
 use SilverStripe\Security\Permission;
 use SilverStripe\Versioned\Versioned;
-
-use Symbiote\Cloudflare\Cloudflare;// @deprecate
-use Symbiote\Cloudflare\CloudflareResult;// @deprecate
-
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 /**
- * Extends Cloudflare to provide:
- *
- * + Purging by tag, host, prefix (Enterprise)
- * + Purging URLs associated with non SiteTree records (using DataObjectPurgeable)
- * + Usage of the Cloudflare SDK
- *
- * This class overrides methods in {@link Symbiote\Cloudflare\Cloudflare}
+ * Purge cache service
  *
  * @author James
  */
-class CloudflarePurgeService extends Cloudflare {
+class CloudflarePurgeService {
+
+    use Injectable;
+
+    use Configurable;
 
     /**
      * @var int
@@ -43,9 +35,25 @@ class CloudflarePurgeService extends Cloudflare {
     private static $purge_all_delay = 1;
 
     /**
-     * @var \Cloudflare\API\Adapter\Guzzle
+     * @var boolean
+     * @config
      */
-    protected $sdk_client = null;
+    private static $enabled = false;
+
+    /**
+     * @var string
+     */
+    private static $api_token = '';
+
+    /**
+     * @var string
+     */
+    private static $zone_id = '';
+
+    /**
+     * @var ApiClient
+     */
+    protected $client = null;
 
     /**
      * @var string
@@ -97,24 +105,6 @@ class CloudflarePurgeService extends Cloudflare {
      */
     public function __construct()
     {
-        parent::__construct();
-        /**
-         * Avoid using parent client class
-         * See: self::getSdkClient()
-         */
-        $this->client = null;// avoid using parent client
-    }
-
-    /**
-     * @return CloudflareResult|null
-     */
-    protected function result($body, bool $response, array $values = []) {
-        $errors = isset($body->errors) && is_array($body->errors) ? $body->errors : [];
-        $result = new CloudflareResult(
-            $values,// what was passed in
-            $errors// error records
-        );
-        return $result;
     }
 
     /**
@@ -164,41 +154,20 @@ class CloudflarePurgeService extends Cloudflare {
     }
 
     /**
-     * Get the auth handler based on configuration (APIToken or APIKey)
-     * @see https://developers.cloudflare.com/api/tokens/
-     * @return Auth|null
+     * Retrieve the ApiClient
+     * @return ApiClient|null
      */
-    public function getAuthHandler() : ?Auth {
-        $authToken = $this->config()->get('auth_token');// recommended
-        $authKey = $this->config()->get('auth_key');// legacy behaviour
-        $auth = null;
-        if($authToken) {
-            $auth = new APIToken($authToken);
-        } else if($authKey) {
-            Logger::log("Cloudflare purge handling should be configured with an auth_token", "NOTICE");
-            $auth = new APIKey(
-                $this->config()->get('email'),
-                $authKey
-            );
-        }
-        return $auth;
-    }
-
-    /**
-     * Retrieve a cloudflare/sdk client
-     * @return CloudflareGuzzleAdapter|null
-     */
-    public function getSdkClient() : ?CloudflareGuzzleAdapter {
+    public function getApiClient() : ?ApiClient {
         if(!self::config()->get('enabled')) {
             return null;
         }
-        if($this->sdk_client) {
-            return $this->sdk_client;
+        if($this->client) {
+            return $this->client;
         }
-        if($auth = $this->getAuthHandler()) {
-            $this->sdk_client = new CloudflareGuzzleAdapter($auth);
-        }
-        return $this->sdk_client;
+        $client = new GuzzleHttpClient();
+        $token = self::config()->get('auth_token');
+        $this->client = new ApiClient($client, $token);
+        return $this->client;
     }
 
     /**
@@ -225,10 +194,9 @@ class CloudflarePurgeService extends Cloudflare {
      * The idea here is that job will be created in the future with a configured delay (hrs)
      * This allows job cancellation and manual actioning
      * Only members with the permission ADMIN may create this job (in this method)
-     * @return CloudflareResult|null
      * @deprecated will be removed in an upcoming release
      */
-    public function purgeAll()
+    public function purgeAll() : bool
     {
         $member = Security::getCurrentUser();
         if(!Permission::checkMember($member, 'ADMIN')) {
@@ -249,116 +217,78 @@ class CloudflarePurgeService extends Cloudflare {
             $descriptor = QueuedJobDescriptor::get()->byId($job_id);
             $result = $descriptor && $descriptor->exists();
         }
-        // this response has no Zone or values passed in
-        return $this->result(null, $result, []);
+        return $result;
     }
 
     /**
-     * Purge cache by tags immediately using cloudflare/sdk
-     * @return CloudflareResult|false
+     * Purge cache by tags immediately
+     * @return ApiResponse
      */
-    public function purgeTags(array $tags) {
+    public function purgeTags(array $tags) : ?ApiResponse {
         if(empty($tags)) {
-            return false;
+            return null;
         }
-        $adapter = $this->getSdkClient();
-        if(!$adapter) {
-            return false;
+        $client = $this->getApiClient();
+        if(!$client) {
+            return null;
         }
-        $zones = new Zones( $adapter );
-        // Logger::log("Cloudflare: purging tags " . implode(",", $tags));
-        $result = $zones->cachePurge(
-            $this->getZoneIdentifier(),
-            null, // files
-            $tags, // tags
-            null  //hosts
-        );
-        return $this->result($zones->getBody(), $result, $tags);
+        $response = $client->purgeTags($this->getZoneIdentifier(), $tags);
+        return $response;
     }
 
     /**
-     * Purge cache by hosts immediately using cloudflare/sdk
-     * @return CloudflareResult|false
+     * Purge cache by hosts immediately
      */
-    public function purgeHosts(array $hosts) {
+    public function purgeHosts(array $hosts) : ?ApiResponse {
         if(empty($hosts)) {
-            return false;
+            return null;
         }
-        $adapter = $this->getSdkClient();
-        if(!$adapter) {
-            return false;
+        $client = $this->getApiClient();
+        if(!$client) {
+            return null;
         }
-        $zones = new Zones( $adapter );
-        // Logger::log("Cloudflare: purging hosts " . implode(",", $hosts));
-        $result = $zones->cachePurge(
-            $this->getZoneIdentifier(),
-            null, // files
-            null, // tags
-            $hosts  //hosts
-        );
-        return $this->result($zones->getBody(), $result, $hosts);
+        $response = $client->purgeHosts($this->getZoneIdentifier(), $hosts);
+        return $response;
     }
 
     /**
-     * Purge cache by urls immediately using cloudflare/sdk
+     * Purge cache by urls immediately
      * This method modifies the URLs provided to ensure they are absolute URLs
-     * @return CloudflareResult|false
      */
-    public function purgeURLs(array $urls) {
+    public function purgeURLs(array $urls) : ?ApiResponse {
 
         if(empty($urls)) {
-            return false;
+            return null;
         }
-
-        $adapter = $this->getSdkClient();
-        if(!$adapter) {
-            return false;
+        $client = $this->getApiClient();
+        if(!$client) {
+            return null;
         }
-
         $urls = $this->prepUrls($urls);
-
-        $zones = new Zones( $adapter );
-
-        // Logger::log("Cloudflare: zones->cachePurge() with " . count($urls) . " URLs");
-        $result = $zones->cachePurge(
-            $this->getZoneIdentifier(),
-            $urls, // files
-            null, // tags
-            null  //hosts
-        );
-        // @link {Cloudflare\API\Traits\BodyAccessorTrait}
-        return $this->result($zones->getBody(), $result, $urls);
+        $response = $client->purgeUrls($this->getZoneIdentifier(), $urls);
+        return $response;
     }
 
     /**
-     * Have to do this directly via the Adapter for the moment
-     * @return CloudflareResult|false
+     * Purge by prefix
      */
     public function purgePrefixes(array $prefixes) {
-        try {
-
-            if(empty($prefixes)) {
-                return false;
-            }
-
-            $adapter = $this->getSdkClient();
-            if(!$adapter) {
-                return false;
-            }
-
-            $options = [
-                'prefixes' => $prefixes
-            ];
-
-            // Logger::log("Cloudflare: purging prefixes " . implode(",", $prefixes));
-            $user = $adapter->post('zones/' . $this->getZoneIdentifier() . '/purge_cache', $options);
-            $body = json_decode($user->getBody());
-            $result = isset($body->result->id);
-            return $this->result($body, $result, $prefixes);
-        } catch (\Exception $e) {
-            // TODO log
+        if(empty($prefixes)) {
+            return null;
         }
-        return false;
+        $client = $this->getApiClient();
+        if(!$client) {
+            return null;
+        }
+        $response = $client->purgePrefixes($this->getZoneIdentifier(), $prefixes);
+        return $response;
+    }
+
+    /**
+     * Get configured Zone ID
+     */
+    public function getZoneIdentifier() : ?string {
+        return self::config()->get('zone_id');
     }
 
     /**
@@ -380,9 +310,8 @@ class CloudflarePurgeService extends Cloudflare {
     /**
      * Given a page, purge its absolute links
      * @param SiteTree $page page record
-     * @return CloudflareResult|false
      */
-    public function purgePage(SiteTree $page) {
+    public function purgePage(SiteTree $page) : ApiResponse {
         $urls = [];
         $urls[] = $page->AbsoluteLink();
         return $this->purgeURLs($urls);
@@ -467,10 +396,9 @@ class CloudflarePurgeService extends Cloudflare {
      * Shorthand for purge files by extension
      * The CF API sets a 30 URL limit per purge request
      * This is fundementally the same as calling purgeURLs with 30 URLs
-     * @return CloudflareResult|null
      * @deprecated will be removed in an upcoming release
      */
-    public function purgeImages() {
+    public function purgeImages() : ApiResponse {
         $categories = File::config()->get('app_categories');
         $extensions = [];
         if( isset( $categories['image'] ) && is_array( $categories['image'] ) ) {
@@ -482,10 +410,9 @@ class CloudflarePurgeService extends Cloudflare {
     /**
      * Purge files by extensions
      * @param array $extensions
-     * @return CloudflareResult|null
      * @deprecated will be removed in an upcoming release
      */
-    protected function purgeFilesByExtensions(array $extensions)
+    protected function purgeFilesByExtensions(array $extensions) : ApiResponse
     {
         if(count($extensions) == 0) {
             return null;
@@ -494,23 +421,14 @@ class CloudflarePurgeService extends Cloudflare {
         if(count($files) == 0) {
             return null;
         }
-        $chunks = array_chunk($files, self::URL_LIMIT_PER_REQUEST);
-        $errors = [];
-        $result = null;
-        foreach($chunks as $chunk) {
-            // @var CloudflareResult
-            $result = $this->purgeURLs($chunk);
-        }
-        // returns last result (in the case of multiple chunks)
-        return $result;
+        return $this->purgeURLs($files);
     }
 
     /**
      * Shorthand for purging css, js and json files
-     * @return CloudflareResult|null
      * @deprecated will be removed in an upcoming release
      */
-    public function purgeCSSAndJavascript()
+    public function purgeCSSAndJavascript() : ApiResponse
     {
         return $this->purgeFilesByExtensions([
             'css',
@@ -522,9 +440,8 @@ class CloudflarePurgeService extends Cloudflare {
     /**
      * Public method to access purging by extension
      * @param array $extensions
-     * @return CloudflareResult|null
      */
-    public function purgeByFileExtension(array $extensions) {
+    public function purgeByFileExtension(array $extensions) : ApiResponse {
         return $this->purgeFilesByExtensions($extensions);
     }
 

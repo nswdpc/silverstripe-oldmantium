@@ -2,10 +2,8 @@
 
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
-use Cloudflare\API\Auth\Auth;
-use Cloudflare\API\Auth\APIKey;
-use Cloudflare\API\Auth\APIToken;
-use Cloudflare\API\Adapter\Guzzle as CloudflareGuzzleAdapter;
+use GuzzleHttp\Client as GuzzleHttpClient;
+use NSWDPC\Utilities\Cloudflare\ApiClient;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use SilverStripe\Dev\TestOnly;
 
@@ -13,28 +11,27 @@ class MockCloudflarePurgeService extends CloudflarePurgeService implements TestO
 {
 
     /**
-     * Retrieve a cloudflare/sdk client
-     * @return NSWDPC\Utilities\Cloudflare\Tests\MockCloudflareAdapter
+     * Retrieve the ApiClient
+     * @return ApiClient|null
      */
-    public function getSdkClient() : ?CloudflareGuzzleAdapter {
-
-        if($this->sdk_client) {
-            return $this->sdk_client;
+    public function getApiClient() : ?ApiClient {
+        if(!self::config()->get('enabled')) {
+            return null;
         }
-
-        if($auth = $this->getAuthHandler()) {
-            $this->sdk_client = new MockCloudflareAdapter($auth);
+        if($this->client) {
+            return $this->client;
         }
-
-        return $this->sdk_client;
+        $client = new GuzzleHttpClient();
+        $token = self::config()->get('auth_token');
+        $this->client = new MockApiClient($client, $token);
+        return $this->client;
     }
 
     /**
-     * Helper method to get SKD client
-     * @return NSWDPC\Utilities\Cloudflare\Tests\MockCloudflareAdapter
+     * Helper method to get client
      */
-    public function getAdapter() {
-        return $this->getSdkClient();
+    public function getAdapter() : ?ApiClient {
+        return $this->getApiClient();
     }
 
     /**

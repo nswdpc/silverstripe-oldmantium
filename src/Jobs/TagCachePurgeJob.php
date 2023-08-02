@@ -3,7 +3,6 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Injector\Injector;
-use Symbiote\Cloudflare\Cloudflare;
 
 /**
  * Purge cache by tag or tags

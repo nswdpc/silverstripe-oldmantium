@@ -1,6 +1,6 @@
-# Reinforced Cloudflare support for Silverstripe websites
+# Cloudflare purge support for Silverstripe websites
 
-This module provides some extra sharp additions for Silverstripe using Cloudflare as a frontend
+Purge cache handling
 
 ### Features
 
@@ -12,14 +12,6 @@ This module provides some extra sharp additions for Silverstripe using Cloudflar
 ## Requirements
 
 See [composer.json](./composer.json) for specifics.
-
-+ Versioned
-+ Cloudflare PHP SDK
-+ Oldman
-+ MultivalueField
-+ Queued Jobs
-
-Site publish/unpublish URL purging is undertaken by [symbiote/silverstripe-oldman](https://github.com/symbiote/silverstripe-oldman)
 
 
 ## Installation
@@ -53,23 +45,9 @@ Documentation: https://developers.cloudflare.com/api/get-started/create-token/
 1. TTL, if required
 
 ```yaml
-Symbiote\Cloudflare\Cloudflare:
+NSWDPC\Utilities\Cloudflare\CloudflarePurgeService:
   enabled: true
   auth_token: '<auth_token>'
-  zone_id: '<zone_id>'
-  # Optional, specify a URL to use instead of Director::baseURL()
-  base_url: 'https://www.example.com/'
-```
-
-### Authentication Key (legacy)
-
-Documentation: https://developers.cloudflare.com/api/get-started/keys/
-
-```yaml
-Symbiote\Cloudflare\Cloudflare:
-  enabled: true
-  email: 'cloudflare@email'
-  auth_key: '<auth_key>'
   zone_id: '<zone_id>'
   # Optional, specify a URL to use instead of Director::baseURL()
   base_url: 'https://www.example.com/'

@@ -5,8 +5,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
-use Symbiote\Cloudflare\CloudflareResult;
-use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
@@ -60,7 +58,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     }
 
     public function getPurgeClient() {
-        return Injector::inst()->get( Cloudflare::class );
+        return Injector::inst()->get( CloudflarePurgeService::class );
     }
 
     public function getTitle() {
@@ -113,8 +111,8 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
      * @throws \Exception
      */
     final protected function checkPurgeResult($result) {
-        if(!$result || !$result instanceof CloudflareResult) {
-            throw new \Exception("Result is not a CloudflareResult instance");
+        if(!$result || !$result instanceof ApiResponse) {
+            throw new \Exception("Result is not a ApiResponse instance");
         }
         $errors = $result->getErrors();
         if(!empty($errors)) {

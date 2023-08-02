@@ -2,10 +2,6 @@
 
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
-use Cloudflare\API\Auth\Auth;
-use Cloudflare\API\Auth\APIKey;
-use Cloudflare\API\Auth\APIToken;
-use Cloudflare\API\Adapter\Guzzle as CloudflareGuzzleAdapter;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Core\Config\Config;
@@ -24,39 +20,26 @@ class CloudflareAuthTest extends SapphireTest
         parent::setUp();
         // Mock a CloudflarePurgeService
         Injector::inst()->load([
-            Cloudflare::class => [
+            CloudflarePurgeService::class => [
                 'class' => MockCloudflarePurgeService::class,
             ]
         ]);
-        $this->client = Injector::inst()->get( Cloudflare::class );
-        $this->assertTrue($this->client instanceof MockCloudflarePurgeService, "Client is not a MockCloudflarePurgeService");
-
     }
 
     /**
      * Test that the service returns the APIToken adapter by default
      */
     public function testAPITokenAuthAdapter() {
-        Config::modify()->set( MockCloudflarePurgeService::class, 'auth_token', 'the auth token');
-        Config::modify()->set( MockCloudflarePurgeService::class, 'auth_key', 'the auth key');
-        $authAdapter = $this->client->getAuthHandler();
-        $this->assertInstanceOf(APIToken::class, $authAdapter);
-        $sdkClient = $this->client->getSdkClient();
-        $this->assertInstanceOf(CloudflareGuzzleAdapter::class, $sdkClient);
-    }
-
-    /**
-     * Test that the service returns the APIKey adapter when no token is present
-     * This is the legacy behaviour to be removed
-     */
-    public function testAPIKeyAuthAdapter() {
-        Config::modify()->set( MockCloudflarePurgeService::class, 'auth_token', null);
-        Config::modify()->set( MockCloudflarePurgeService::class, 'auth_key', 'the auth key');
-        Config::modify()->set( MockCloudflarePurgeService::class, 'email', 'some.one@app.example.com');
-        $authAdapter = $this->client->getAuthHandler();
-        $this->assertInstanceOf(APIKey::class, $authAdapter);
-        $sdkClient = $this->client->getSdkClient();
-        $this->assertInstanceOf(CloudflareGuzzleAdapter::class, $sdkClient);
+        Config::modify()->set( MockCloudflarePurgeService::class, 'auth_token', 'test-auth-token');
+        Config::modify()->set( MockCloudflarePurgeService::class, 'enabled', true);
+        $service = Injector::inst()->get( CloudflarePurgeService::class );
+        $this->assertInstanceOf(MockCloudflarePurgeService::class, $service, "Service is not a MockCloudflarePurgeService");
+        $urls = ['https://example.com/foo'];
+        $response = $service->purgeUrls($urls);
+        $client = $service->getApiClient();
+        $this->assertInstanceOf(MockApiClient::class, $client, "Service is not a MockApiClient");
+        $data = $client->getMockRequestData();
+        $this->assertEquals( 'Bearer test-auth-token', $data['options']['headers']['Authorization'] );
     }
 
 }

@@ -36,26 +36,10 @@ class PurgeEverythingTest extends CloudflarePurgeTest
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
+        $data = $this->client->getAdapter()->getMockRequestData();
         // request data should include a purge_everything key
-        $this->assertArrayHasKey('purge_everything', $data, "'purge_everything' does not exist in POST data");
-
-        $keys = array_keys($data);
-        $this->assertEquals(1, count($keys), "There should only be one key in the data, found: " . count($data));
-
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
-
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
+        $this->assertArrayHasKey('purge_everything', $data['options']['json'], "'purge_everything' does not exist in POST data");
+        $this->assertTrue($data['options']['json']['purge_everything']);
     }
 
 }

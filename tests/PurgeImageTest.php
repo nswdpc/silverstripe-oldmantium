@@ -7,6 +7,7 @@ use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\ImageCachePurgeJob;
+use SilverStripe\Assets\File;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
@@ -40,6 +41,14 @@ class PurgeImageTest extends CloudflarePurgeTest
      * Test purging images
      */
     public function testPurgeRecordImage() {
+
+        $categories = File::config()->get('app_categories');
+        $extensions = [];
+        if( isset( $categories['image'] ) && is_array( $categories['image'] ) ) {
+            $extensions = $categories['image'];
+        }
+
+        $this->assertNotEmpty($extensions);
 
         $purge = PurgeRecord::create([
             'Title' => 'Purge IMAGE',
@@ -75,24 +84,11 @@ class PurgeImageTest extends CloudflarePurgeTest
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
-        $this->assertArrayHasKey('files', $data, "'files' does not exist in POST data");
-        $this->assertEquals(1, count( array_keys($data) ), "There should only be one key in the data, found: " . count($data));
-
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
-
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
-
+        $data = $this->client->getAdapter()->getMockRequestData();
+        $expected = $this->client->prepUrls( $this->client->getPublicFilesByExtension($extensions) );
+        sort($data['options']['json']['files']);
+        sort($expected);
+        $this->assertEquals($expected, $data['options']['json']['files']);
 
         $purge->doUnpublish();
 
@@ -118,24 +114,11 @@ class PurgeImageTest extends CloudflarePurgeTest
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
-        $this->assertArrayHasKey('files', $data, "'files' does not exist in POST data");
-        $this->assertEquals(1, count( array_keys($data) ), "There should only be one key in the data, found: " . count($data));
-
-        $values = $purge->getPurgeTypeValues( $purge->Type );
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
-
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
+        $data = $this->client->getAdapter()->getMockRequestData();
+        $expected = $this->client->prepUrls( $this->client->getPublicFilesByExtension($extensions) );
+        sort($data['options']['json']['files']);
+        sort($expected);
+        $this->assertEquals($expected, $data['options']['json']['files']);
 
         $purge->delete();
 

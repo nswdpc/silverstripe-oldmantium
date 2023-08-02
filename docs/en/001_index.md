@@ -1,5 +1,10 @@
 # Documentation
 
+
+## Pages
+
+Publishing/unpublising a page will send a request to purge the cache for the page's current URL.
+
 ## PurgeRecord
 
 ### URL

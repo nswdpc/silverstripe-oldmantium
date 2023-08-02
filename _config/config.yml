@@ -1,12 +1,10 @@
 ---
 Name: nswdpc-oldmantium
-After:
-  - '#cloudflare_extensions'
 ---
-SilverStripe\Core\Injector\Injector:
-  Symbiote\Cloudflare\Cloudflare:
-    class: NSWDPC\Utilities\Cloudflare\CloudflarePurgeService
 NSWDPC\Utilities\Cloudflare\PurgeRecord:
   extensions:
     - 'NSWDPC\Utilities\Cloudflare\DataObjectPurgeable'
     - 'Silverstripe\Versioned\Versioned'
+SilverStripe\CMS\Model\SiteTree:
+  extensions:
+    - 'NSWDPC\Utilities\Cloudflare\SiteTreeExtension'

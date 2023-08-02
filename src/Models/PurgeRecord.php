@@ -13,7 +13,6 @@ use SilverStripe\Forms\NumericField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
-use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\MultiValueField\Fields\MultiValueListField;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
 use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;

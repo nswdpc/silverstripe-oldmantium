@@ -8,6 +8,7 @@ use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\URLCachePurgeJob;
 use SilverStripe\Core\Injector\Injector;
+use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
@@ -63,29 +64,11 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
-        $this->assertArrayHasKey('files', $data, "'files' does not exist in POST data");
-        $this->assertEquals(1, count( array_keys($data) ), "There should only be one key in the data, found: " . count($data));
-
-        // compare with returned values that should not have reading modes
+        $data = $this->client->getAdapter()->getMockRequestData();
         $urls = $record->getPurgeUrlList();
         CloudflarePurgeService::removeReadingMode($urls);
 
-        $this->assertEquals( $urls, $data['files'], "Purged files sent in data does not match record getPurgeUrlList");
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
-
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
-
+        $this->assertEquals( $urls, $data['options']['json']['files'], "Purged files sent in data does not match record getPurgeUrlList");
         return $record;
 
     }
@@ -128,33 +111,49 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
-        $this->assertArrayHasKey('files', $data, "'files' does not exist in POST data");
-        $this->assertEquals(1, count( array_keys($data) ), "There should only be one key in the data, found: " . count($data));
-
-        // compare with returned values that should not have reading modes
+        $data = $this->client->getAdapter()->getMockRequestData();
         $urls = $record->getPurgeUrlList();
         CloudflarePurgeService::removeReadingMode($urls);
 
-        $this->assertEquals($urls, $data['files'], "Purged files sent in data does not match record getPurgeUrlList");
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
+        $this->assertEquals( $urls, $data['options']['json']['files'], "Purged files sent in data does not match record getPurgeUrlList");
 
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
+    }
+
+    public function testRecordDelete() {
+
+        $record = $this->createAndPublish();
+        $record2 = $this->createAndPublish();
+
+        $descriptors = QueuedJobDescriptor::get()->filter([
+            'Implementation' => URLCachePurgeJob::class
+        ])->exclude([
+            'JobStatus' => [
+                QueuedJob::STATUS_RUN,
+                QueuedJob::STATUS_COMPLETE
+            ]
+        ]);
+
+        $this->assertEquals(2, $descriptors->count() );
 
         $record->delete();
 
-        $descriptors = $record->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
-        $this->assertEquals(0, $descriptors->count(), "Jobs count should be 0 after delete");
+        $descriptors = QueuedJobDescriptor::get()->filter([
+            'Implementation' => URLCachePurgeJob::class
+        ])->exclude([
+            'JobStatus' => [
+                QueuedJob::STATUS_RUN,
+                QueuedJob::STATUS_COMPLETE
+            ]
+        ]);
+
+        $this->assertEquals(1, $descriptors->count() );
+
+        // remaining descriptor
+        $descriptor = $descriptors->first();
+        $data = unserialize($descriptor->SavedJobData);
+        $this->assertEquals(2, $data->PurgeRecordID);
+        $this->assertEquals(TestVersionedRecord::class, $data->PurgeRecordType);
+
 
     }
 }

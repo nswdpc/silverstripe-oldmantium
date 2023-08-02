@@ -61,26 +61,7 @@ class PurgePrefixTest extends CloudflarePurgeTest
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
-        $this->assertArrayHasKey('prefixes', $data, "'prefixes' does not exist in POST data");
-        $this->assertEquals(1, count( array_keys($data) ), "There should only be one key in the data, found: " . count($data));
-
-        $values = $purge->getPurgeTypeValues( $purge->Type );
-        $this->assertEquals($values, $data['prefixes'], "Purged prefixes sent in data does not match record getPurgeTypeValues");
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
-
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
-
+        $this->validatePurgeRequest($purge, 'prefixes');
 
         $purge->doUnpublish();
 
@@ -106,25 +87,7 @@ class PurgePrefixTest extends CloudflarePurgeTest
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getData();
-        $headers = $this->client->getAdapter()->getHeaders();
-        $client_headers = $this->client->getAdapter()->getClientHeaders();
-        $uri = $this->client->getAdapter()->getLastUri();
-
-        $this->assertArrayHasKey('prefixes', $data, "'prefixes' does not exist in POST data");
-        $this->assertEquals(1, count( array_keys($data) ), "There should only be one key in the data, found: " . count($data));
-
-        $values = $purge->getPurgeTypeValues( $purge->Type );
-        $this->assertEquals($values, $data['prefixes'], "Purged prefixes sent in data does not match record getPurgeTypeValues");
-        $this->assertEquals("zones/{$this->client->getZoneIdentifier()}/purge_cache", $uri, "URI mismatch");
-
-        $this->assertEquals(
-            [
-                "Bearer " . $this->client->config()->get('auth_token')
-            ],
-            array_values($client_headers),
-            "Client AUTH headers mismatch"
-        );
+        $this->validatePurgeRequest($purge, 'prefixes');
 
         $purge->delete();
 
