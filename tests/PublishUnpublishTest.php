@@ -23,10 +23,10 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
     /**
      * Method used on publish and unpublish tests
      */
-    protected function createAndPublish() {
+    protected function createAndPublish(string $title) {
 
         $record = TestVersionedRecord::create([
-            'Title' => 'Test record write'
+            'Title' => $title
         ]);
 
         // test values are sane
@@ -77,7 +77,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
      * Test record publishing
      */
     public function testRecordPublish() {
-        $this->createAndPublish();
+        $this->createAndPublish("testRecordPublish");
     }
 
     /**
@@ -85,7 +85,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
      */
     public function testRecordUnpublish() {
 
-        $record = $this->createAndPublish();
+        $record = $this->createAndPublish("testRecordUnpublish");
 
         $record->doUnPublish();
 
@@ -121,8 +121,8 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
 
     public function testRecordDelete() {
 
-        $record = $this->createAndPublish();
-        $record2 = $this->createAndPublish();
+        $record = $this->createAndPublish("testRecordDelete1");
+        $record2 = $this->createAndPublish("testRecordDelete2");
 
         $descriptors = QueuedJobDescriptor::get()->filter([
             'Implementation' => URLCachePurgeJob::class
