@@ -151,7 +151,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
         // remaining descriptor
         $descriptor = $descriptors->first();
         $data = unserialize($descriptor->SavedJobData);
-        $this->assertEquals(2, $data->PurgeRecordID);
+        $this->assertEquals($record2->ID, $data->PurgeRecordID);
         $this->assertEquals(TestVersionedRecord::class, $data->PurgeRecordType);
 
 
