@@ -60,9 +60,9 @@ class ApiClient {
             $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
             return new ApiResult($decoded, $body);
         } catch (\JsonException $e) {
-            Logger::log("JSON decode error on response from Cloudflare API request:" . $e->getMessage());
+            Logger::log("JSON decode error on response from Cloudflare API request:" . $e->getMessage(), "WARNING");
         } catch (\Exception $e) {
-            Logger::log("General exception during Cloudflare API request:" . $e->getMessage());
+            Logger::log("Cloudflare API error. " . $e->getMessage(), "WARNING");
         }
         return null;
     }
