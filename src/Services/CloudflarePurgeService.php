@@ -51,6 +51,11 @@ class CloudflarePurgeService {
     private static $zone_id = '';
 
     /**
+     * @var string
+     */
+    private static $base_url = '';
+
+    /**
      * @var ApiClient
      */
     protected $client = null;
@@ -313,7 +318,13 @@ class CloudflarePurgeService {
      */
     public function purgePage(SiteTree $page) : ApiResponse {
         $urls = [];
-        $urls[] = $page->AbsoluteLink();
+        $baseURL = self::config()->get('base_url');
+        if($baseURL) {
+            $url = Controller::join_links($baseURL, $page->Link());
+        } else {
+            $url = $page->AbsoluteLink();
+        }
+        $urls[] = $url;
         return $this->purgeURLs($urls);
     }
 

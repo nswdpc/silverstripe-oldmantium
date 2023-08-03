@@ -7,6 +7,7 @@ use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\URLCachePurgeJob;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
@@ -155,5 +156,34 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
         $this->assertEquals(TestVersionedRecord::class, $data->PurgeRecordType);
 
 
+    }
+
+    public function testPurgePage() {
+        $page = \Page::create([
+            'Title' => 'Test page 1',
+            'URLSegment' => 'test-page-one',
+            'ParentID' => 0
+        ]);
+        $page->write();
+
+        $response = $this->client->purgePage($page);
+        $data = $this->client->getAdapter()->getMockRequestData();
+        $expected = "http://localhost/test-page-one/";
+        $this->assertEquals($expected, $data['options']['json']['files'][0]);
+    }
+
+    public function testPurgePageWithBaseUrl() {
+        Config::modify()->update( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
+        $page = \Page::create([
+            'Title' => 'Test page 1',
+            'URLSegment' => 'test-page-one',
+            'ParentID' => 0
+        ]);
+        $page->write();
+
+        $response = $this->client->purgePage($page);
+        $data = $this->client->getAdapter()->getMockRequestData();
+        $expected = "https://another.example.com/test-page-one/";
+        $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 }
