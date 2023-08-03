@@ -158,7 +158,8 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
 
     }
 
-    public function testPurgePage() {
+    public function testPurgePageNoBaseUrl() {
+        Config::modify()->update( CloudflarePurgeService::class, 'base_url', '');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
