@@ -165,6 +165,13 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     }
 
     /**
+     * Clear related jobs when this record is unpublished
+     */
+    public function clearPurgeJobsOnUnPublish() : bool {
+        return true;
+    }
+
+    /**
      * Retrict types that require values
      */
     public function requiresTypeValue() : bool {

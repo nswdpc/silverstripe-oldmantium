@@ -52,7 +52,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
     /**
      * Prior to write, remove any pending jobs for this record
-     * Allows the afterDelete to create the correct job(s)
      */
     public function onBeforeWrite()
     {
@@ -63,7 +62,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
     /**
      * Prior to delete, remove any pending jobs for this record
-     * Allows the afterDelete to create the correct job(s)
      */
     public function onBeforeDelete()
     {
@@ -89,19 +87,29 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     }
 
     /**
-     * After unpublish, create any purge jobs that should be fired for the 'unpublish' reason
-     * For versioned records when the Live stage record is removed
+     * After unpublish, selectively handle purge jobs
      */
     public function onAfterUnpublish()
     {
         if ($this->owner->hasExtension(Versioned::class)) {
-            // Logger::log("Cloudflare: creating jobs for reason=unpublish");
-            $start = null;
-            if($this->owner->CachePurgeAt) {
-                $start = new \DateTime( $this->owner->CachePurgeAt );
+            if($this->owner->clearPurgeJobsOnUnPublish()) {
+                $this->clearCurrentJobs();
+            } else {
+                // Logger::log("Cloudflare: creating jobs for reason=unpublish");
+                $start = null;
+                if($this->owner->CachePurgeAt) {
+                    $start = new \DateTime( $this->owner->CachePurgeAt );
+                }
+                $this->owner->createPurgeJobs('unpublish');
             }
-            $this->owner->createPurgeJobs('unpublish');
         }
+    }
+
+    /**
+     * BC: do not clear jobs on publish
+     */
+    public function clearPurgeJobsOnUnPublish() : bool {
+        return false;
     }
 
     public function updateCMSFields(FieldList $fields)

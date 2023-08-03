@@ -91,30 +91,7 @@ class PurgeFileExtensionTest extends CloudflarePurgeTest
         // test that a job was created for this record reason = 'write'
         $descriptors = $purge->getCurrentPurgeJobDescriptors( [ FileExtensionCachePurgeJob::class ] );
 
-        $this->assertEquals(1, $descriptors->count(), "Jobs count should be 1");
-
-        $descriptor = $descriptors->first();
-
-        $job_data = unserialize($descriptor->SavedJobData);
-        $this->assertEquals(DataObjectPurgeable::REASON_UNPUBLISH, $job_data->reason);
-
-        $job = Injector::inst()->createWithArgs(
-                $descriptor->Implementation,
-                [
-                    DataObjectPurgeable::REASON_UNPUBLISH,
-                    $purge
-                ]
-        );
-
-        $job->setup();
-        $job->process();
-
-        // check data
-        $data = $this->client->getAdapter()->getMockRequestData();
-        $expected = $this->client->prepUrls( $this->client->getPublicFilesByExtension($extensions) );
-        sort($data['options']['json']['files']);
-        sort($expected);
-        $this->assertEquals($expected, $data['options']['json']['files']);
+        $this->assertEquals(0, $descriptors->count(), "Jobs count should be 0");
 
         $purge->delete();
 

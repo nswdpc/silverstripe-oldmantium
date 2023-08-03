@@ -65,26 +65,7 @@ class PurgeURLTest extends CloudflarePurgeTest
         // test that a job was created for this record reason = 'write'
         $descriptors = $purge->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
 
-        $this->assertEquals(1, $descriptors->count(), "Jobs count should be 1");
-
-        $descriptor = $descriptors->first();
-
-        $job_data = unserialize($descriptor->SavedJobData);
-        $this->assertEquals(DataObjectPurgeable::REASON_UNPUBLISH, $job_data->reason);
-
-        $job = Injector::inst()->createWithArgs(
-                $descriptor->Implementation,
-                [
-                    DataObjectPurgeable::REASON_UNPUBLISH,
-                    $purge
-                ]
-        );
-
-        $job->setup();
-        $job->process();// request / response
-
-        // check data
-        $this->validatePurgeRequest($purge, 'files');
+        $this->assertEquals(0, $descriptors->count(), "Jobs count should be 0");
 
         $purge->delete();
 
