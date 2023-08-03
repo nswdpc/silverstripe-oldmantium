@@ -31,12 +31,7 @@ class FileExtensionCachePurgeJob extends AbstractRecordCachePurgeJob
      * Process the job
      */
     public function process() {
-        try {
-            return $this->checkPurgeResult( $this->getPurgeClient()->purgeByFileExtension( $this->checkRecordForErrors() ) );
-        } catch (\Exception $e) {
-            $this->addMessage("Cloudflare: failed to purge files (urls) with error=" . $e->getMessage() . " of type " . get_class($e), "NOTICE");
-            $this->isComplete = false;
-        }
+        $this->checkPurgeResult( $this->getPurgeClient()->purgeByFileExtension( $this->checkRecordForErrors() ) );
     }
 
 

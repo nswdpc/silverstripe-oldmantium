@@ -31,12 +31,7 @@ class ImageCachePurgeJob extends AbstractRecordCachePurgeJob
      * Process the job
      */
     public function process() {
-        try {
-            return $this->checkPurgeResult( $this->getPurgeClient()->purgeImages( ) );
-        } catch (\Exception $e) {
-            $this->addMessage("Cloudflare: failed to purge files (urls) with error=" . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine(), "NOTICE");
-            $this->isComplete = false;
-        }
+        $this->checkPurgeResult( $this->getPurgeClient()->purgeImages( ) );
     }
 
 

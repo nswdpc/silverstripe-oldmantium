@@ -107,32 +107,28 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
 
     /**
      * Checks the result of the purge, if not an error the job is marked as complete
-     * @return true
      * @throws \Exception
      */
-    final protected function checkPurgeResult($result) {
-        if(!$result || !$result instanceof ApiResponse) {
-            throw new \Exception("Result is not a ApiResponse instance");
-        }
-        $errors = $result->getErrors();
+    final protected function checkPurgeResult(?ApiResponse $response) {
+        // Record errors
+        $errors = $response->getErrors();
         if(!empty($errors)) {
-            foreach($errors as $e => $file) {
-                $this->addMessage('Error: ' . $file);
+            foreach($errors as $error) {
+                $this->addMessage("Error: code={$error->code} message={$error->message}");
             }
-            throw new \Exception("Purge had errors:" . json_encode($errors));
+            throw new \Exception("Response contained errors");
         }
-        $this->addMessage('Job completed without errors');
-        $successes = $result->getSuccesses();
+
+        // Record successes
+        $successes = $response->getSuccesses();
         if(!empty($successes)) {
             foreach($successes as $s => $file) {
                 $this->addMessage('Success: ' . $file);
             }
-        } else {
-            $this->addMessage('Success: no success records found');
         }
+
         $this->currentStep++;
         $this->isComplete = true;
-        return true;
     }
 
     /**
