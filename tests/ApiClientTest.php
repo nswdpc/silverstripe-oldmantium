@@ -33,6 +33,32 @@ class ApiClientTest extends CloudflarePurgeTest
     /**
      * Validate successes are captured
      */
+    public function testRequestExtraHeaders() {
+        $apiClient = $this->client->getAdapter();
+        $urls = [
+            'https://example.com/foo',
+            'https://example.com/bar'
+        ];
+
+        $headers = [
+            'CF-Device-Type' => 'mobile',
+            'CF-IPCountry' => 'AU'
+
+        ];
+        $apiClient->setIsMockError(false);
+        $response = $apiClient->purgeUrls('test-zone-id', $urls, $headers);
+        $this->assertTrue( $response->allSuccess() );
+        $this->assertFalse( $response->hasErrors() );
+        $data = $apiClient->getMockRequestData();
+        $this->assertArrayHasKey('CF-Device-Type', $data['options']['headers']);
+        $this->assertArrayHasKey('CF-IPCountry', $data['options']['headers']);
+        $this->assertEquals('mobile', $data['options']['headers']['CF-Device-Type']);
+        $this->assertEquals('AU', $data['options']['headers']['CF-IPCountry']);
+    }
+
+    /**
+     * Validate successes are captured
+     */
     public function testRequestWithMultipleChunks() {
         $apiClient = $this->client->getAdapter();
         $max = 80;

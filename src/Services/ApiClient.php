@@ -47,7 +47,7 @@ class ApiClient {
 
     protected function getOptions(array $headers, array $body) : array {
         $options = [];
-        $options['headers'] = $this->getHeaders();
+        $options['headers'] = $headers;
         $options['json'] = $body;
         return $options;
     }
@@ -67,34 +67,34 @@ class ApiClient {
         return null;
     }
 
-    protected function getPurgeResponse(string $zoneId, string $purgeType, array $values) : ApiResponse {
+    protected function getPurgeResponse(string $zoneId, string $purgeType, array $values, array $extraHeaders = []) : ApiResponse {
         $chunks = array_chunk($values, self::CHUNK_SIZE);
         $response = new ApiResponse();
         foreach($chunks as $chunk) {
             $body = [
                 $purgeType => $chunk
             ];
-            if($result = $this->callApi($zoneId, $body)) {
+            if($result = $this->callApi($zoneId, $body, $extraHeaders)) {
                 $response->addResult($result);
             }
         }
         return $response;
     }
 
-    public function purgeUrls(string $zoneId, array $urls) : ApiResponse {
-        return $this->getPurgeResponse($zoneId, 'files', $urls);
+    public function purgeUrls(string $zoneId, array $urls, array $extraHeaders = []) : ApiResponse {
+        return $this->getPurgeResponse($zoneId, 'files', $urls, $extraHeaders);
     }
 
-    public function purgePrefixes(string $zoneId, array $prefixes) : ApiResponse {
-        return $this->getPurgeResponse($zoneId, 'prefixes', $prefixes);
+    public function purgePrefixes(string $zoneId, array $prefixes, array $extraHeaders = []) : ApiResponse {
+        return $this->getPurgeResponse($zoneId, 'prefixes', $prefixes, $extraHeaders);
     }
 
-    public function purgeTags(string $zoneId, array $tags) : ApiResponse {
-        return $this->getPurgeResponse($zoneId, 'tags', $tags);
+    public function purgeTags(string $zoneId, array $tags, array $extraHeaders = []) : ApiResponse {
+        return $this->getPurgeResponse($zoneId, 'tags', $tags, $extraHeaders);
     }
 
-    public function purgeHosts(string $zoneId, array $hosts) : ApiResponse {
-        return $this->getPurgeResponse($zoneId, 'hosts', $hosts);
+    public function purgeHosts(string $zoneId, array $hosts, array $extraHeaders = []) : ApiResponse {
+        return $this->getPurgeResponse($zoneId, 'hosts', $hosts, $extraHeaders);
     }
 
     public function purgeEverything(string $zoneId) : ApiResponse {
