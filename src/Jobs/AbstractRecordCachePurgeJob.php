@@ -145,7 +145,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         }
         if($record->CacheMaxAge && $record->CacheMaxAge > 0) {
             $next = new DateTime();
-            $next->modify('+' . $record->CacheMaxAge . ' seconds');
+            $next->modify('+' . $record->CacheMaxAge . ' minutes');
             $next_formatted = $next->format('Y-m-d H:i:s');
             $job = Injector::inst()->createWithArgs( get_class($this),  [ $this->reason, $record ] );
             $this->addMessage("Cloudflare: requeuing job for {$next_formatted}");
