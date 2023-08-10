@@ -158,13 +158,6 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     }
 
     /**
-     * Get the record name for identification in the queuedjob
-     */
-    public function getPurgeRecordName() : string {
-        return AbstractRecordCachePurgeJob::RECORD_NAME;
-    }
-
-    /**
      * Clear related jobs when this record is unpublished
      */
     public function clearPurgeJobsOnUnPublish() : bool {
