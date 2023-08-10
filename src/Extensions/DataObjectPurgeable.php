@@ -82,7 +82,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             if($this->owner->CachePurgeAt) {
                 $start = new \DateTime( $this->owner->CachePurgeAt );
             }
-            $this->owner->createPurgeJobs('publish', $start);
+            $this->createPurgeJobs('publish', $start);
         }
     }
 
@@ -100,7 +100,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                 if($this->owner->CachePurgeAt) {
                     $start = new \DateTime( $this->owner->CachePurgeAt );
                 }
-                $this->owner->createPurgeJobs('unpublish');
+                $this->createPurgeJobs('unpublish');
             }
         }
     }
@@ -209,7 +209,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     }
 
     private function clearCurrentJobs() {
-        $jobs = $this->owner->getCurrentPurgeJobDescriptors();
+        $jobs = $this->getCurrentPurgeJobDescriptors();
         foreach($jobs as $job) {
             $job->delete();
         }
@@ -244,7 +244,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             'JobStatus' => $statii
         ]);
 
-        $name = $this->owner->getPurgeRecordName();
+        $name = $this->getPurgeRecordName();
         $record_id = "{$name}ID";
         $record_type = "{$name}Type";
 
@@ -266,7 +266,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      * @param string $type being one of the CloudflarePurgeService::TYPE_ constant values
      * @return string|false
      */
-    public function getJobClassForType($type) {
+    public static function getJobClassForType($type) {
         $class = "NSWDPC\\Utilities\\Cloudflare\\{$type}CachePurgeJob";
         if(class_exists($class)) {
             return $class;
@@ -282,7 +282,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     public function getPurgeJobs($reason): array {
         $jobs = [];
         // get all possible values this record may have, keys define jobs
-        $values  = $this->owner->getPurgeValues();
+        $values  = $this->getPurgeValues();
         // no values means no jobs
         if(empty($values)) {
             return [];
@@ -329,7 +329,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             // Logger::log("Cloudflare: createPurgeJobs reason={$reason} from=" . get_class($this) . " starts={$start_after}");
 
             // get all possible jobs for this record
-            $jobs = $this->owner->getPurgeJobs($reason);
+            $jobs = $this->getPurgeJobs($reason);
             if(empty($jobs)) {
                 Logger::log("Cloudflare: createPurgeJobs there are no jobs available for reason={$reason}","NOTICE");
                 return false;
