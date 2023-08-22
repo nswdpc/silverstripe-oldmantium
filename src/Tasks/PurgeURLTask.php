@@ -21,7 +21,7 @@ class PurgeURLTask extends BuildTask
     {
         try {
             $urls = $request->getVar('url');
-            if(!is_string($url)) {
+            if(!is_string($urls)) {
                 throw new \Exception("Please provide a url parameter, with one or more URLs");
             }
             $urls = explode(",", $urls);
