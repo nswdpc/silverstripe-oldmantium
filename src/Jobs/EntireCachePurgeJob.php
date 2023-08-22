@@ -6,7 +6,6 @@ namespace NSWDPC\Utilities\Cloudflare;
  * Purge all records in zone
  * NOTE: this can have negative consequences for system load and availability on a high traffic website
  * @author James
- * @deprecated will be removed in an upcoming release
  */
 class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
 {
