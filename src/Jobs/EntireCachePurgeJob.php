@@ -2,8 +2,6 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use Cloudflare\API\Endpoints\Zones;
-
 /**
  * Purge all records in zone
  * NOTE: this can have negative consequences for system load and availability on a high traffic website

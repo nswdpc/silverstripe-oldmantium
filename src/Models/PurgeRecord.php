@@ -2,8 +2,6 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use gorriecoe\LinkField\LinkField;
-use gorriecoe\Link\Models\Link;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBField;

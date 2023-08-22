@@ -3,7 +3,6 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use GuzzleHttp\Client as GuzzleHttpClient;
-use NSWDPC\Utilities\Cloudflare\EntireCachePurgeJob;
 use SilverStripe\Assets\File;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Director;
