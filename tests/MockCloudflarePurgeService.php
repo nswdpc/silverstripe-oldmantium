@@ -2,39 +2,44 @@
 
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
-use Cloudflare\API\Auth\APIKey;
+use GuzzleHttp\Client as GuzzleHttpClient;
+use NSWDPC\Utilities\Cloudflare\ApiClient;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use SilverStripe\Dev\TestOnly;
 
 class MockCloudflarePurgeService extends CloudflarePurgeService implements TestOnly
 {
 
-    private static $enabled = true;
-    private static $email = "test@example.com";
-    private static $auth_key = "test-123-abcd";
-    private static $base_url = '';
-    private static $zone_id = "test-zone";
-
-    private static $endpoint_base_uri = "";
-
-    protected $adapter;
-
     /**
-     * Retrieve a cloudflare/sdk client
-     * @return NSWDPC\Utilities\Cloudflare\Tests\MockCloudflareAdapter
+     * Retrieve the ApiClient
+     * @return ApiClient|null
      */
-    public function getSdkClient() {
-
-        $auth = new APIKey(
-            $this->config()->get('email'),
-            $this->config()->get('auth_key')
-        );
-        $this->adapter = new MockCloudflareAdapter($auth);
-        return $this->adapter;
+    public function getApiClient() : ?ApiClient {
+        if(!self::config()->get('enabled')) {
+            return null;
+        }
+        if($this->client) {
+            return $this->client;
+        }
+        $client = new GuzzleHttpClient();
+        $token = self::config()->get('auth_token');
+        $this->client = new MockApiClient($client, $token);
+        return $this->client;
     }
 
-    public function getAdapter() {
-        return $this->adapter;
+    /**
+     * Helper method to get client
+     */
+    public function getAdapter() : ?ApiClient {
+        return $this->getApiClient();
+    }
+
+    /**
+     * Return the absolute path to the test public resources dir
+     * @return string
+     */
+    protected function getPublicResourcesDir() : string {
+        return dirname(__FILE__) . "/public/_resources/";
     }
 
 }

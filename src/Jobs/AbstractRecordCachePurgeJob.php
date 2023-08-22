@@ -5,8 +5,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
-use Symbiote\Cloudflare\CloudflareResult;
-use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
@@ -16,21 +14,38 @@ use Exception;
 
 /**
  * Abstract record cache purge job
- * @author James Ellis <james.ellis@dpc.nsw.gov.au>
+ * @author James
  */
 abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements QueuedJob
 {
 
+    /**
+     * @inheritdoc
+     */
     protected $totalSteps = 1;
 
+    /**
+     * @var string
+     */
     const RECORD_NAME = 'PurgeRecord';
 
+    /**
+     * Return the purge type for this job
+     */
+    abstract public function getPurgeType() : string;
+
+    /**
+     * Job constructor
+     */
     public function __construct($reason = null, DataObject $object = null)
     {
         if($reason) {
             $this->reason = $reason;
         }
         if($object) {
+            if( !$object->hasExtension( DataObjectPurgeable::class ) ) {
+                throw new \Exception("Record must have DataObjectPurgeable extension applied");
+            }
             $this->setObject($object, self::RECORD_NAME);
         }
     }
@@ -43,7 +58,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     }
 
     public function getPurgeClient() {
-        return Injector::inst()->get(Cloudflare::CLOUDFLARE_CLASS);
+        return Injector::inst()->get( CloudflarePurgeService::class );
     }
 
     public function getTitle() {
@@ -59,52 +74,61 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     /**
      * Checks the provided record for existence and whether it can return values for the required purge type
      * @return array the values that shalle be purged
-     * @param string $type the purge type e.g 'hosts'
      */
-    final protected function checkRecordForErrors($type) {
+    final protected function checkRecordForErrors() : array {
+
         $record = $this->getObject(self::RECORD_NAME);
         if(!$record) {
             throw new \Exception("Record not found");
         }
-        $values = $record->getPurgeValues();
-        if(empty($values[ $type ]) || !is_array($values[ $type ])) {
-            throw new \Exception("Record has no '{$type}' values to purge");
-        } else {
-            foreach($values[$type] as $k => $value) {
-                $this->addMessage("Purging '{$value}' of type '{$type}'...");
-            }
+
+        $type = $this->getPurgeType();
+        if(!$type) {
+            throw new \Exception("This job does not specify a purge type");
         }
-        return $values;
+
+        $purgeValues = $record->getPurgeValues();
+        // The record must have a set of values key by Type to purge (can be empty)
+        if( isset($purgeValues[ $type ]) && is_array($purgeValues[ $type ]) ) {
+
+            if( count($purgeValues[ $type ]) > 0 ) {
+                foreach($purgeValues[$type] as $value) {
+                    $this->addMessage("Will purge '{$value}' of type '{$type}'...");
+                }
+                return $purgeValues[$type];
+            }
+
+        } else {
+            throw new \Exception("Record missing '{$type}' values");
+        }
+
+        return [];
     }
 
     /**
      * Checks the result of the purge, if not an error the job is marked as complete
-     * @return true
      * @throws \Exception
      */
-    final protected function checkPurgeResult($result) {
-        if(!$result || !$result instanceof CloudflareResult) {
-            throw new \Exception("Result is not a CloudflareResult instance");
-        }
-        $errors = $result->getErrors();
+    final protected function checkPurgeResult(?ApiResponse $response) {
+        // Record errors
+        $errors = $response->getErrors();
         if(!empty($errors)) {
-            foreach($errors as $e => $file) {
-                $this->addMessage('Error: ' . $file);
+            foreach($errors as $error) {
+                $this->addMessage("Error: code={$error->code} message={$error->message}");
             }
-            throw new \Exception("Purge had errors:" . json_encode($errors));
+            throw new \Exception("Response contained errors");
         }
-        $this->addMessage('Job completed without errors');
-        $successes = $result->getSuccesses();
+
+        // Record successes
+        $successes = $response->getSuccesses();
         if(!empty($successes)) {
             foreach($successes as $s => $file) {
                 $this->addMessage('Success: ' . $file);
             }
-        } else {
-            $this->addMessage('Success: no success records found');
         }
+
         $this->currentStep++;
         $this->isComplete = true;
-        return true;
     }
 
     /**
@@ -121,7 +145,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         }
         if($record->CacheMaxAge && $record->CacheMaxAge > 0) {
             $next = new DateTime();
-            $next->modify('+' . $record->CacheMaxAge . ' seconds');
+            $next->modify('+' . $record->CacheMaxAge . ' minutes');
             $next_formatted = $next->format('Y-m-d H:i:s');
             $job = Injector::inst()->createWithArgs( get_class($this),  [ $this->reason, $record ] );
             $this->addMessage("Cloudflare: requeuing job for {$next_formatted}");

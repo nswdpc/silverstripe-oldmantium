@@ -2,17 +2,15 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use gorriecoe\LinkField\LinkField;
-use gorriecoe\Link\Models\Link;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\ValidationException;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
-use Symbiote\Cloudflare\Cloudflare;
 use Symbiote\MultiValueField\Fields\MultiValueListField;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
 use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;
@@ -21,30 +19,47 @@ use Symbiote\MultiValueField\ORM\FieldType\MultiValueField;
 /**
  * A PurgeRecord
  * {@link NSWDPC\Utilities\Cloudflare\DataObjectPurgeable} provides event handling for this class
- * @author james.ellis@dpc.nsw.gov.au
+ * @author James
  */
 
 class PurgeRecord extends DataObject implements PermissionProvider {
 
+    /**
+     * @inheritdoc
+     */
     private static $table_name = 'CloudflarePurgeRecord';
 
+    /**
+     * @inheritdoc
+     */
     private static $singular_name = 'Cloudflare purge record';
+
+    /**
+     * @inheritdoc
+     */
     private static $plural_name = 'Cloudflare purge records';
 
+    /**
+     * @inheritdoc
+     */
     private static $db = [
         'Title' => 'Varchar(255)',
-        'Type' => 'Varchar(8)',
+        'Type' => 'Varchar(16)',
         'TypeValues' => 'MultiValueField'
     ];
 
+    /**
+     * @inheritdoc
+     */
     private static $summary_fields = [
         'Title' => 'Title',
-        'Type' => 'Type',
+        'TypeString' => 'Type',
         'TypeValues.csv' => 'Values',
     ];
 
     /**
      * Get available types to select from in the administration screen
+     * The values of these types map to *CachePurgeJob class names
      * @return array
      */
     public function getTypes() {
@@ -52,13 +67,29 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             CloudflarePurgeService::TYPE_HOST,
             CloudflarePurgeService::TYPE_PREFIX,
             CloudflarePurgeService::TYPE_URL,
-            CloudflarePurgeService::TYPE_TAG
+            CloudflarePurgeService::TYPE_TAG,
+            CloudflarePurgeService::TYPE_FILE_EXTENSION,// @deprecated
+            CloudflarePurgeService::TYPE_IMAGE,// @deprecated
+            CloudflarePurgeService::TYPE_CSS_JAVASCRIPT,// @deprecated
         ];
         $result = [];
         foreach($types as $type) {
-            $result[ $type ] = _t(__CLASS__ . '.TYPE_' . strtoupper($type), $type);
+            $result[ $type ] = $this->getTypeString($type);
         }
         return $result;
+    }
+
+    /**
+     * Helper method to get translated version of Type value
+     * @return string
+     */
+    public function getTypeString($type = null) : string {
+        $type = $type ?: $this->Type;
+        if(!$type) {
+            return _t(__CLASS__ . '.UNKNOWN', 'Unknown');
+        } else {
+            return _t(__CLASS__ . '.TYPE_' . strtoupper($type), $type);
+        }
     }
 
     public function getCMSFields()
@@ -125,12 +156,30 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     }
 
     /**
-     * Get the record name for identification in the queuedjob
+     * Clear related jobs when this record is unpublished
      */
-    public function getPurgeRecordName() : string {
-        return AbstractRecordCachePurgeJob::RECORD_NAME;
+    public function clearPurgeJobsOnUnPublish() : bool {
+        return true;
     }
 
+    /**
+     * Retrict types that require values
+     */
+    public function requiresTypeValue() : bool {
+        switch($this->Type) {
+            case CloudflarePurgeService::TYPE_IMAGE:
+            case CloudflarePurgeService::TYPE_CSS_JAVASCRIPT:
+                return false;
+                break;
+            default:
+                return true;
+                break;
+        }
+    }
+
+    /**
+     * Actions to preform pre-write
+     */
     public function onBeforeWrite()
     {
         parent::onBeforeWrite();
@@ -138,8 +187,15 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             $this->TypeValues = null;
         }
 
+        $values = $this->getPurgeTypeValues( $this->Type );
+
+        if(count($values) == 0 && $this->requiresTypeValue()) {
+            throw new ValidationException(
+                _t(__CLASS__ . '.PROVIDE_VALUES', 'Please provide one or more values')
+            );
+        }
+
         if($this->Type == CloudflarePurgeService::TYPE_URL) {
-            $values = $this->getPurgeTypeValues( $this->Type );
             if(is_array($values)) {
                 foreach($values as $i => $value) {
                     $values[$i] = Director::absoluteURL($value);

@@ -1,0 +1,10 @@
+en:
+  NSWDPC\Utilities\Cloudflare\PurgeRecord:
+    TYPE_HOST: 'Purge by host'
+    TYPE_TAG: 'Purge by cache tag'
+    TYPE_PREFIX: 'Purge by prefix'
+    TYPE_URL: 'Purge by URL'
+    TYPE_ENTIRE: 'Entire cache purge (warning)'
+    TYPE_FILEEXTENSION: 'Purge public files by file extension(s)'
+    TYPE_IMAGE: 'Purge public files by common image extensions'
+    TYPE_CSSJAVASCRIPT: 'Purge public css, json and js files'
