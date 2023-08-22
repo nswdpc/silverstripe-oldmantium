@@ -16,11 +16,16 @@ class PurgeURLTask extends BuildTask
 
     protected $description = 'Provide URLs as comma delimited values';
 
-    protected $segment = "PurgeURLTask";
+    private static $segment = "PurgeURLTask";
 
     public function run($request)
     {
         try {
+
+            if(!CloudflarePurgeService::config()->get('enabled')) {
+                throw new \Exception("Not enabled");
+            }
+
             $urls = $request->getVar('url');
             if(!is_string($urls)) {
                 throw new \Exception("Please provide a url parameter, with one or more URLs");
@@ -34,9 +39,13 @@ class PurgeURLTask extends BuildTask
             $count = $response->getResultCount();
             $successes = $response->getSuccesses();
             $errors = $response->getErrors();
-            DB::alteration_message("Completed count={$count} urls={$urlCount}", "changed");
+            if($count == 0) {
+                DB::alteration_message("No response / check logs", "error");
+            } else {
+                DB::alteration_message("Completed count={$count} urls={$urlCount}", "changed");
+            }
             foreach($successes as $id) {
-                DB::alteration_message("Result={$id}", "changed");
+                DB::alteration_message("Success", "changed");
             }
             foreach($errors as $error) {
                 DB::alteration_message("Error code={$error->code} message={$error->message}", "error");
