@@ -19,6 +19,7 @@
         }
     ],
     "require": {
+        "guzzlehttp/guzzle": "^7",
         "silverstripe/framework": "^4.10.0",
         "silverstripe/cms": "^4",
         "silverstripe/versioned" : "^1",
