@@ -85,21 +85,6 @@ class CloudflarePurgeService {
     const TYPE_ENTIRE = 'Entire';
 
     /**
-     * @var string
-     */
-    const TYPE_FILE_EXTENSION = 'FileExtension';
-
-    /**
-     * @var string
-     */
-    const TYPE_IMAGE = 'Image';
-
-    /**
-     * @var string
-     */
-    const TYPE_CSS_JAVASCRIPT = 'CSSJavascript';
-
-    /**
      * @var int
      */
     const URL_LIMIT_PER_REQUEST = 30;
@@ -248,7 +233,6 @@ class CloudflarePurgeService {
      * The idea here is that job will be created in the future with a configured delay (hrs)
      * This allows job cancellation and manual actioning
      * Only members with the permission ADMIN may create this job (in this method)
-     * @deprecated will be removed in an upcoming release
      */
     public function purgeAll() : bool
     {
@@ -354,10 +338,7 @@ class CloudflarePurgeService {
             self::TYPE_HOST => 'hosts',
             self::TYPE_TAG => 'tags',
             self::TYPE_PREFIX => 'prefixes',
-            self::TYPE_URL => 'files',
-            self::TYPE_IMAGE => 'files',
-            self::TYPE_CSS_JAVASCRIPT => 'files',
-            self::TYPE_FILE_EXTENSION => 'files'
+            self::TYPE_URL => 'files'
         ];
     }
 
@@ -375,134 +356,6 @@ class CloudflarePurgeService {
         }
         $urls[] = $url;
         return $this->purgeURLs($urls);
-    }
-
-    /**
-     * Return the absolute path to the public resources dir
-     * e.g /var/www/example.com/public/_resources/
-     * @return string
-     */
-    protected function getPublicResourcesDir() : string {
-        return PUBLIC_PATH . "/" . RESOURCES_DIR;
-    }
-
-    /**
-     * Return a list of all files in vendor exposed directories with matching extensions
-     * along with all published File records ending with extension
-     * @return array
-     */
-    public function getPublicFilesByExtension(array $extensions) : array {
-
-
-        $publicLinks = [];
-        if($publicResourcesDir = $this->getPublicResourcesDir()) {
-            $directory = new \RecursiveDirectoryIterator(
-                $publicResourcesDir,// base of _resources dir
-                \FilesystemIterator::FOLLOW_SYMLINKS
-            );
-            $iterator = new \RecursiveIteratorIterator($directory);
-
-            // Escape extension
-            $patternExtensions = $extensions;
-            array_walk(
-                $patternExtensions,
-                function(&$value, $key) {
-                    $value = preg_quote($value);
-                }
-            );
-
-            $pattern = '/\.(' . implode("|", $patternExtensions) . ')$/i';
-            $publicFiles = new \RegexIterator(
-                $iterator,
-                $pattern,
-                \RecursiveRegexIterator::GET_MATCH
-            );
-
-            $publicFiles->rewind();
-            while($publicFiles->valid()) {
-                // prefix sub path with RESOURCES_DIR to ensure correct URL
-                $publicLinks[] = Path::join( RESOURCES_DIR, $publicFiles->getSubPathName() );// relative file
-                $publicFiles->next();
-            }
-
-        }
-
-        // Look up matching assets in DB
-        $prefixedExtensions = $extensions;
-        array_walk(
-            $prefixedExtensions,
-            function(&$value, $key) {
-                $value = "." . ltrim($value, ".");
-            }
-
-        );
-
-        $files = Versioned::get_by_stage(
-            File::class,
-            Versioned::LIVE
-        )->filter([
-            'Name:EndsWith' => $prefixedExtensions
-        ]);
-
-        $result = array_merge(
-            $publicLinks,
-            $files->map('ID','Link')->toArray()
-        );
-
-        return $result;
-    }
-
-    /**
-     * Shorthand for purge files by extension
-     * The CF API sets a 30 URL limit per purge request
-     * This is fundementally the same as calling purgeURLs with 30 URLs
-     * @deprecated will be removed in an upcoming release
-     */
-    public function purgeImages() : ApiResponse {
-        $categories = File::config()->get('app_categories');
-        $extensions = [];
-        if( isset( $categories['image'] ) && is_array( $categories['image'] ) ) {
-            $extensions = $categories['image'];
-        }
-        return $this->purgeFilesByExtensions($extensions);
-    }
-
-    /**
-     * Purge files by extensions
-     * @param array $extensions
-     * @deprecated will be removed in an upcoming release
-     */
-    protected function purgeFilesByExtensions(array $extensions) : ApiResponse
-    {
-        if(count($extensions) == 0) {
-            return null;
-        }
-        $files = $this->getPublicFilesByExtension($extensions);
-        if(count($files) == 0) {
-            return null;
-        }
-        return $this->purgeURLs($files);
-    }
-
-    /**
-     * Shorthand for purging css, js and json files
-     * @deprecated will be removed in an upcoming release
-     */
-    public function purgeCSSAndJavascript() : ApiResponse
-    {
-        return $this->purgeFilesByExtensions([
-            'css',
-            'js',
-            'json',
-        ]);
-    }
-
-    /**
-     * Public method to access purging by extension
-     * @param array $extensions
-     */
-    public function purgeByFileExtension(array $extensions) : ApiResponse {
-        return $this->purgeFilesByExtensions($extensions);
     }
 
 }

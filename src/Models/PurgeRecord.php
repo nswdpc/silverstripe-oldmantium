@@ -67,10 +67,7 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             CloudflarePurgeService::TYPE_HOST,
             CloudflarePurgeService::TYPE_PREFIX,
             CloudflarePurgeService::TYPE_URL,
-            CloudflarePurgeService::TYPE_TAG,
-            CloudflarePurgeService::TYPE_FILE_EXTENSION,// @deprecated
-            CloudflarePurgeService::TYPE_IMAGE,// @deprecated
-            CloudflarePurgeService::TYPE_CSS_JAVASCRIPT,// @deprecated
+            CloudflarePurgeService::TYPE_TAG
         ];
         $result = [];
         foreach($types as $type) {
@@ -166,15 +163,7 @@ class PurgeRecord extends DataObject implements PermissionProvider {
      * Retrict types that require values
      */
     public function requiresTypeValue() : bool {
-        switch($this->Type) {
-            case CloudflarePurgeService::TYPE_IMAGE:
-            case CloudflarePurgeService::TYPE_CSS_JAVASCRIPT:
-                return false;
-                break;
-            default:
-                return true;
-                break;
-        }
+        return true;
     }
 
     /**
