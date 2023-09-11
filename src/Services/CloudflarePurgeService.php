@@ -194,6 +194,56 @@ class CloudflarePurgeService {
     }
 
     /**
+     * Replace the scheme/host with the configured base URL if it exists
+     * This is gnerally used by tests to validate base_url functionality
+     */
+    public static function replaceWithBaseUrl(array $urls) : array {
+
+        $baseURL = self::config()->get('base_url');
+        if(!$baseURL) {
+            return $urls;
+        }
+
+        $scheme = parse_url($baseURL, PHP_URL_SCHEME);
+        $host = parse_url($baseURL, PHP_URL_HOST);
+
+        if(!$scheme) {
+            throw new \Exception("base_url needs to have a scheme");
+        }
+        if(!$host) {
+            throw new \Exception("base_url needs to have a host");
+        }
+
+        // Replace base_url
+        $updatedUrls = [];
+        foreach($urls as $url) {
+
+            // gather parts from URL provide
+            $path = parse_url($url, PHP_URL_PATH);
+            $port = parse_url($url, PHP_URL_PORT);
+            $query = parse_url($url, PHP_URL_QUERY);
+
+            // use base URL parts for these components
+            $newUrl = $scheme . "://";
+            $newUrl .= $host;
+            if($port) {
+                $newUrl .= ":" . $port;
+            }
+            if($path) {
+                $newUrl .= $path;
+            }
+            if($query) {
+                $newUrl .= "?" . $query;
+            }
+
+            $updatedUrls[] = $newUrl;
+
+        }
+
+        return $updatedUrls;
+    }
+
+    /**
      * Purge all from zone by creating a cache purge job in the future (which handles the purging)
      * The idea here is that job will be created in the future with a configured delay (hrs)
      * This allows job cancellation and manual actioning
