@@ -176,6 +176,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
     }
 
     public function testPurgePageWithBaseUrl() {
+        Config::modify()->set(Director::class, 'alternate_base_url', 'https://base.example.com/');
         Config::modify()->set( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
         $page = \Page::create([
             'Title' => 'Test page 1',
@@ -186,7 +187,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
 
         $response = $this->client->purgePage($page);
         $data = $this->client->getAdapter()->getMockRequestData();
-        $expected = "https://another.example.com/test-page-one/";
+        $expected = "https://another.example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 }
