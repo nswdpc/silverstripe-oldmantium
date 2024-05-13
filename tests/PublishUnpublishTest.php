@@ -7,6 +7,7 @@ use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\URLCachePurgeJob;
+use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\Services\QueuedJob;
@@ -159,6 +160,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
     }
 
     public function testPurgePageNoBaseUrl() {
+        Config::modify()->set(Director::class, 'alternate_base_url', 'https://example.com/');
         Config::modify()->set( CloudflarePurgeService::class, 'base_url', '');
         $page = \Page::create([
             'Title' => 'Test page 1',
@@ -169,7 +171,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
 
         $response = $this->client->purgePage($page);
         $data = $this->client->getAdapter()->getMockRequestData();
-        $expected = "http://localhost/test-page-one/";
+        $expected = "https://example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 
