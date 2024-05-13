@@ -21,7 +21,7 @@ class BaseURLTest extends CloudflarePurgeTest
         $scheme = "https";
         $host = "alt.example.com";
         $baseUrl = $scheme . "://" . $host;
-        Config::modify()->update(CloudflarePurgeService::class, 'base_url', $baseUrl);
+        Config::modify()->set(CloudflarePurgeService::class, 'base_url', $baseUrl);
 
         // these URLS should all have their scheme + host updated
         $urls = [

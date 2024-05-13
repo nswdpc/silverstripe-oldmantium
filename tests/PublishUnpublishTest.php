@@ -159,7 +159,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
     }
 
     public function testPurgePageNoBaseUrl() {
-        Config::modify()->update( CloudflarePurgeService::class, 'base_url', '');
+        Config::modify()->set( CloudflarePurgeService::class, 'base_url', '');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
@@ -174,7 +174,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
     }
 
     public function testPurgePageWithBaseUrl() {
-        Config::modify()->update( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
+        Config::modify()->set( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
