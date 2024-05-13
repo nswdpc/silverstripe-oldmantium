@@ -14,13 +14,13 @@ use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTest.php');
+require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test publish/unpublish events on versioned record
  * @author James
  */
-class PublishUnpublishTest extends CloudflarePurgeTest {
+class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
 
     /**
      * Method used on publish and unpublish tests

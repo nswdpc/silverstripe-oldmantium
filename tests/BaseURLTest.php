@@ -5,13 +5,13 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use SilverStripe\Core\Config\Config;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTest.php');
+require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test base_url configuration
  * @author James
  */
-class BaseURLTest extends CloudflarePurgeTest
+class BaseURLTest extends CloudflarePurgeTestAbstract
 {
 
     protected $usesDatabase = false;

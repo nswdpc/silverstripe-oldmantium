@@ -23,7 +23,7 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
  * Test functionality provided by the module
  * @author James
  */
-abstract class CloudflarePurgeTest extends SapphireTest
+abstract class CloudflarePurgeTestAbstract extends SapphireTest
 {
 
     protected $usesDatabase = true;
