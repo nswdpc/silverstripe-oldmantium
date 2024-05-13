@@ -11,13 +11,13 @@ use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTest.php');
+require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test purge cache everything
  * @author James
  */
-class PurgeEverythingTest extends CloudflarePurgeTest
+class PurgeEverythingTest extends CloudflarePurgeTestAbstract
 {
 
     public function testPurgeAll() {

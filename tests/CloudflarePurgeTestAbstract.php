@@ -23,7 +23,7 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
  * Test functionality provided by the module
  * @author James
  */
-abstract class CloudflarePurgeTest extends SapphireTest
+abstract class CloudflarePurgeTestAbstract extends SapphireTest
 {
 
     protected $usesDatabase = true;
@@ -60,13 +60,13 @@ abstract class CloudflarePurgeTest extends SapphireTest
             ]
         ]);
 
-        Config::modify()->update(CloudflarePurgeService::class, 'enabled', $this->enabled);
+        Config::modify()->set(CloudflarePurgeService::class, 'enabled', $this->enabled);
 
         // Token based auth
-        Config::modify()->update(CloudflarePurgeService::class, 'auth_token', $this->auth_token);
+        Config::modify()->set(CloudflarePurgeService::class, 'auth_token', $this->auth_token);
 
         // Zone to purge
-        Config::modify()->update(CloudflarePurgeService::class, 'zone_id', $this->zone_id);
+        Config::modify()->set(CloudflarePurgeService::class, 'zone_id', $this->zone_id);
 
 
         $this->client = Injector::inst()->get( CloudflarePurgeService::class );

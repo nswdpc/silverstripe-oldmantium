@@ -4,13 +4,13 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\ApiClient;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTest.php');
+require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test API client
  * @author James
  */
-class ApiClientTest extends CloudflarePurgeTest
+class ApiClientTest extends CloudflarePurgeTestAbstract
 {
 
     protected $usesDatabase = false;

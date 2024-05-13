@@ -7,19 +7,20 @@ use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\URLCachePurgeJob;
+use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTest.php');
+require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test publish/unpublish events on versioned record
  * @author James
  */
-class PublishUnpublishTest extends CloudflarePurgeTest {
+class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
 
     /**
      * Method used on publish and unpublish tests
@@ -159,7 +160,8 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
     }
 
     public function testPurgePageNoBaseUrl() {
-        Config::modify()->update( CloudflarePurgeService::class, 'base_url', '');
+        Config::modify()->set(Director::class, 'alternate_base_url', 'https://example.com/');
+        Config::modify()->set( CloudflarePurgeService::class, 'base_url', '');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
@@ -169,12 +171,13 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
 
         $response = $this->client->purgePage($page);
         $data = $this->client->getAdapter()->getMockRequestData();
-        $expected = "http://localhost/test-page-one/";
+        $expected = "https://example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 
     public function testPurgePageWithBaseUrl() {
-        Config::modify()->update( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
+        Config::modify()->set(Director::class, 'alternate_base_url', 'https://base.example.com/');
+        Config::modify()->set( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
@@ -184,7 +187,7 @@ class PublishUnpublishTest extends CloudflarePurgeTest {
 
         $response = $this->client->purgePage($page);
         $data = $this->client->getAdapter()->getMockRequestData();
-        $expected = "https://another.example.com/test-page-one/";
+        $expected = "https://another.example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 }
