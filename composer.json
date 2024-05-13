@@ -20,11 +20,11 @@
     ],
     "require": {
         "guzzlehttp/guzzle": "^7",
-        "silverstripe/framework": "^4.10.0",
-        "silverstripe/cms": "^4",
-        "silverstripe/versioned" : "^1",
-        "symbiote/silverstripe-queuedjobs": "^4",
-        "symbiote/silverstripe-multivaluefield" : "^5"
+        "silverstripe/framework": "^5",
+        "silverstripe/cms": "^5",
+        "silverstripe/versioned" : "^2",
+        "symbiote/silverstripe-queuedjobs": "^5",
+        "symbiote/silverstripe-multivaluefield" : "^6"
     },
     "suggests" : {
         "silverstripe/versioned" : "for versioned dataobject support",
