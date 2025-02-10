@@ -169,7 +169,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgePage($page);
+        $response = $this->client->purgeRecord($page);
         $data = $this->client->getAdapter()->getMockRequestData();
         $expected = "https://example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
@@ -185,9 +185,23 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgePage($page);
+        $response = $this->client->purgeRecord($page);
         $data = $this->client->getAdapter()->getMockRequestData();
         $expected = "https://another.example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
+    }
+
+    public function testPurgeRecordWithPurgeUrlListMethod() {
+        $record = TestPurgeUrlListRecord::create();
+        $record->Title = 'TestPurgeUrlListRecord';
+        $record->write();
+        $response = $this->client->purgeRecord($record);
+        $data = $this->client->getAdapter()->getMockRequestData();
+        $expected = [
+            'https://example.com/TestPurgeUrlListRecord.html',
+            'https://example.com/TestPurgeUrlListRecord.html?alternateformat=1',
+            'https://example.com/TestPurgeUrlListRecord.html?format=html'
+        ];
+        $this->assertEquals($expected, $data['options']['json']['files']);
     }
 }

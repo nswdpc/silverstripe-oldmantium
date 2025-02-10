@@ -10,6 +10,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Path;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 use SilverStripe\Security\Permission;
 use SilverStripe\Versioned\Versioned;
@@ -343,19 +344,58 @@ class CloudflarePurgeService {
     }
 
     /**
-     * Given a page, purge its absolute links
-     * @param SiteTree $page page record
+     * Method to purge a DataObject that has an AbsoluteLink() or Link() method (if using base_url for latter)
      */
-    public function purgePage(SiteTree $page) : ApiResponse {
+    final protected function purgeRecordWithAbsoluteLink(DataObject $record): ?ApiResponse {
         $urls = [];
         $baseURL = self::config()->get('base_url');
         if($baseURL) {
-            $url = Controller::join_links($baseURL, $page->Link());
+            $url = Controller::join_links($baseURL, $record->Link());
         } else {
-            $url = $page->AbsoluteLink();
+            $url = $record->AbsoluteLink();
         }
         $urls[] = $url;
+        Logger::log('purgeRecordWithAbsoluteLink purgeURLs calling ' . $url, 'INFO');
         return $this->purgeURLs($urls);
+    }
+
+    /**
+     * Given a page, purge its published URL
+     */
+    public function purgePage(SiteTree $page) : ?ApiResponse {
+        Logger::log('purgeFile called', 'INFO');
+        return $this->purgeRecordWithAbsoluteLink($page);
+    }
+
+    /**
+     * Give a file, purge its published URL
+     * This is functionally the same as purgePage as the API is consistent between the two
+     */
+    public function purgeFile(File $file) : ?ApiResponse {
+        Logger::log('purgeFile called', 'INFO');
+        return $this->purgeRecordWithAbsoluteLink($file);
+    }
+
+    /**
+     * Purge an object
+     */
+    public function purgeRecord(object $object) : ?ApiResponse {
+        if(method_exists($object, 'getPurgeUrlList') || (method_exists($object, 'hasMethod') && $object->hasMethod('getPurgeUrlList'))) {
+            // custom record handling - allows purge of multiple URLs linked to an object
+            $urls = $object->getPurgeUrlList();
+            if(!is_array($urls)) {
+                Logger::log("purgeRecord - purgeURLs requires an array of URLs!", "NOTICE");
+                return null;
+            } else {
+                return $this->purgeURLs($urls);
+            }
+        } else if($object instanceof SiteTree) {
+            return $this->purgePage($object);
+        } else if($object instanceof File) {
+            return $this->purgeFile($object);
+        } else {
+            throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
+        }
     }
 
 }

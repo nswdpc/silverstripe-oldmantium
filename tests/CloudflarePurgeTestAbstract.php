@@ -36,6 +36,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
 
     protected static $extra_dataobjects = [
         TestVersionedRecord::class,
+        TestPurgeUrlListRecord::class,
         PurgeRecord::class
     ];
 

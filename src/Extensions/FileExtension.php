@@ -5,11 +5,11 @@ namespace NSWDPC\Utilities\Cloudflare;
 use Silverstripe\ORM\DataExtension;
 
 /**
- * SiteTree purge handling
+ * File purge handling
  * @author James
  */
 
-class SiteTreeExtension extends DataExtension {
+class FileExtension extends DataExtension {
 
     use PurgeVersionedOwner;
 
