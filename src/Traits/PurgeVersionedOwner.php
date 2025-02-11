@@ -23,6 +23,20 @@ trait PurgeVersionedOwner {
     }
 
     /**
+     * Purge the owner record URL on publish recursive
+     * Note that it's possible that onAfterPublish is also hit in the same action, leading to two requests
+     * to the Cloudflare API
+     */
+    public function onAfterPublishRecursive()
+    {
+        Logger::log('onAfterPublishRecursive Purge ' . (get_class($this->getOwner())), 'INFO');
+        if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
+            return;
+        }
+        $result = Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner());
+    }
+
+    /**
      * Purge the owner record URL on unpublish
      */
     public function onAfterUnpublish()
