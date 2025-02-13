@@ -87,6 +87,23 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     }
 
     /**
+     * After publish recursive, create any purge jobs that should be fired for the 'publish' reason
+     * For versioned records when they are published
+     */
+    public function onAfterPublishRecursive()
+    {
+        if ($this->owner->hasExtension(Versioned::class)) {
+            // Logger::log("Cloudflare: creating jobs for reason=publishrecursive");
+            $start = null;
+            if($this->owner->CachePurgeAt) {
+                $start = new \DateTime( $this->owner->CachePurgeAt );
+            }
+            $this->createPurgeJobs('publish', $start);
+        }
+    }
+
+
+    /**
      * After unpublish, selectively handle purge jobs
      */
     public function onAfterUnpublish()
