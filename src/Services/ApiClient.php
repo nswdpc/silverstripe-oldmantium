@@ -45,6 +45,10 @@ class ApiClient {
         return $headers;
     }
 
+    /**
+     * Get options for request.
+     * See https://docs.guzzlephp.org/en/latest/request-options.html#json for json key usage
+     */
     protected function getOptions(array $headers, array $body) : array {
         $options = [];
         $options['headers'] = $headers;
