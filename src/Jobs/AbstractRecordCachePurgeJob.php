@@ -57,8 +57,11 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         return parent::addMessage($msg, $level);
     }
 
+    /**
+     * Return a new instance of the purge service client
+     */
     public function getPurgeClient() {
-        return Injector::inst()->get( CloudflarePurgeService::class );
+        return Injector::inst()->create( CloudflarePurgeService::class );
     }
 
     public function getTitle() {
