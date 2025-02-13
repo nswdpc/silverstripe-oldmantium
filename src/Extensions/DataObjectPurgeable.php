@@ -333,7 +333,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         try {
             $jobs_queued = [];
 
-            $client = Injector::inst()->get( CloudflarePurgeService::class );
             if ( !Config::inst()->get( CloudflarePurgeService::class, 'enabled') ) {
                 Logger::log("Cloudflare: createPurgeJobs called but not enabled in configuration","NOTICE");
                 return false;
