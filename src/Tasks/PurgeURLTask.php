@@ -35,7 +35,7 @@ class PurgeURLTask extends BuildTask
             if($urlCount == 0) {
                 throw new \Exception("Please provide a url parameter, with one or more URLs");
             }
-            $response = Injector::inst()->get( CloudflarePurgeService::class )->purgeURLs($urls);
+            $response = Injector::inst()->create( CloudflarePurgeService::class )->purgeURLs($urls);
             $count = $response->getResultCount();
             $successes = $response->getSuccesses();
             $errors = $response->getErrors();
