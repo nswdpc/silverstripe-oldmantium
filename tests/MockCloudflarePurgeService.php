@@ -5,6 +5,7 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 use GuzzleHttp\Client as GuzzleHttpClient;
 use NSWDPC\Utilities\Cloudflare\ApiClient;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
+use NSWDPC\Utilities\Cloudflare\Logger;
 use SilverStripe\Dev\TestOnly;
 
 class MockCloudflarePurgeService extends CloudflarePurgeService implements TestOnly
@@ -14,24 +15,12 @@ class MockCloudflarePurgeService extends CloudflarePurgeService implements TestO
      * Retrieve the ApiClient
      * @return ApiClient|null
      */
-    public function getApiClient() : ?ApiClient {
-        if(!self::config()->get('enabled')) {
-            return null;
-        }
-        if($this->client) {
-            return $this->client;
-        }
+    public function createApiClient() : ApiClient {
         $client = new GuzzleHttpClient();
         $token = self::config()->get('auth_token');
-        $this->client = new MockApiClient($client, $token);
-        return $this->client;
-    }
-
-    /**
-     * Helper method to get client
-     */
-    public function getAdapter() : ?ApiClient {
-        return $this->getApiClient();
+        // when a new API client is created, clear the request history
+        MockApiClient::clearRequestHistory();
+        return new MockApiClient($client, $token);
     }
 
     /**

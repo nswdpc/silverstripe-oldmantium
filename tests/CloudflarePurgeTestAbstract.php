@@ -51,7 +51,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
         ]
     ];
 
-    public function setUp() : void {
+    protected function setUp() : void {
         parent::setUp();
 
         // Mock a CloudflarePurgeService
@@ -70,7 +70,8 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
         Config::modify()->set(CloudflarePurgeService::class, 'zone_id', $this->zone_id);
 
 
-        $this->client = Injector::inst()->get( CloudflarePurgeService::class );
+        // Create a new client for each test
+        $this->client = Injector::inst()->create( CloudflarePurgeService::class );
 
         $this->assertTrue($this->client instanceof MockCloudflarePurgeService, "Client is not a MockCloudflarePurgeService");
 
@@ -122,7 +123,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
      * Check the request against what was provided
      */
     protected function validatePurgeRequest(PurgeRecord $record, string $type) {
-        $data = $this->client->getAdapter()->getMockRequestData();
+        $data = MockApiClient::getLastRequestData();
         $values = $record->getPurgeTypeValues( $record->Type );
         $this->assertEquals($values, $data['options']['json'][ $type ], "Purge type={$type} request values match record getPurgeTypeValues");
         $this->assertEquals("http://localhost/client/v4/zones/{$this->client->getZoneIdentifier()}/purge_cache", $data['url'], "URI mismatch");

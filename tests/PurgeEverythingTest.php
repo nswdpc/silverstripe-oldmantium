@@ -36,7 +36,7 @@ class PurgeEverythingTest extends CloudflarePurgeTestAbstract
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getMockRequestData();
+        $data = MockApiClient::getLastRequestData();
         // request data should include a purge_everything key
         $this->assertArrayHasKey('purge_everything', $data['options']['json'], "'purge_everything' does not exist in POST data");
         $this->assertTrue($data['options']['json']['purge_everything']);

@@ -6,6 +6,8 @@ use GuzzleHttp\ClientInterface;
 
 class ApiClient {
 
+    public const HEADER_PURGE_REASON = 'X-Purge-Reason';
+
     /**
      * @var string
      */

@@ -4,34 +4,34 @@ SilverStripe\Assets\Folder:
   purge2:
     Name: purge2
 SilverStripe\Assets\Image:
-  gif:
+  image-gif:
     FileFilename: image.gif
     FileHash: 55b443b60176235ef09801153cca4e6da7494a0c
     Name: image.gif
     Parent: =>SilverStripe\Assets\Folder.purge1
-  jpg:
+  image-jpg:
     FileFilename: image.jpg
     FileHash: 55b443b60176235ef09801153cca4e6da7494a0c
     Name: image.jpg
     Parent: =>SilverStripe\Assets\Folder.purge2
-  jpeg:
+  image-jpeg:
     FileFilename: image.jpeg
     FileHash: 55b443b60176235ef09801153cca4e6da7494a0c
     Name: image.jpeg
     Parent: =>SilverStripe\Assets\Folder.purge2
 SilverStripe\Assets\File:
-  pdf:
+  file-pdf:
+    Name: file.pdf
     FileFilename: file.pdf
     FileHash: 55b443b60176235ef09801153cca4e6da7494a0c
-    Name: file.pdf
     Parent: =>SilverStripe\Assets\Folder.purge1
-  text:
+  file-text:
+    Name: file.txt
     FileFilename: file.txt
     FileHash: 55b443b60176235ef09801153cca4e6da7494a0c
-    Name: file.txt
     Parent: =>SilverStripe\Assets\Folder.purge2
-  doc:
+  file-doc:
+    Name: file.doc
     FileFilename: file.doc
     FileHash: 55b443b60176235ef09801153cca4e6da7494a0c
-    Name: file.doc
     Parent: =>SilverStripe\Assets\Folder.purge2

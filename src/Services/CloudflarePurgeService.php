@@ -154,10 +154,24 @@ class CloudflarePurgeService {
         if($this->client) {
             return $this->client;
         }
+        $this->client = $this->createApiClient();
+        return $this->client;
+    }
+
+    /**
+     * Helper method to get client
+     */
+    public function getAdapter() : ?ApiClient {
+        return $this->getApiClient();
+    }
+
+    /**
+     * Create a new API client
+     */
+    protected function createApiClient(): ApiClient {
         $client = new GuzzleHttpClient();
         $token = self::config()->get('auth_token');
-        $this->client = new ApiClient($client, $token);
-        return $this->client;
+        return new ApiClient($client, $token);
     }
 
     /**
@@ -263,64 +277,83 @@ class CloudflarePurgeService {
      * Purge cache by tags immediately
      * @return ApiResponse
      */
-    public function purgeTags(array $tags) : ?ApiResponse {
-        if(empty($tags)) {
+    public function purgeTags(array $tags, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(empty($tags)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $response = $client->purgeTags($this->getZoneIdentifier(), $tags, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge tags " . implode(",", $tags) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $response = $client->purgeTags($this->getZoneIdentifier(), $tags);
-        return $response;
     }
 
     /**
      * Purge cache by hosts immediately
      */
-    public function purgeHosts(array $hosts) : ?ApiResponse {
-        if(empty($hosts)) {
+    public function purgeHosts(array $hosts, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(empty($hosts)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $response = $client->purgeHosts($this->getZoneIdentifier(), $hosts, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge hosts " . implode(",", $hosts) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $response = $client->purgeHosts($this->getZoneIdentifier(), $hosts);
-        return $response;
     }
 
     /**
      * Purge cache by urls immediately
      * This method modifies the URLs provided to ensure they are absolute URLs
      */
-    public function purgeURLs(array $urls) : ?ApiResponse {
-
-        if(empty($urls)) {
+    public function purgeURLs(array $urls, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(empty($urls)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $urls = $this->prepUrls($urls);
+            $response = $client->purgeUrls($this->getZoneIdentifier(), $urls, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge URLs " . implode(",", $urls) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $urls = $this->prepUrls($urls);
-        $response = $client->purgeUrls($this->getZoneIdentifier(), $urls);
-        return $response;
     }
 
     /**
      * Purge by prefix
      */
-    public function purgePrefixes(array $prefixes) {
-        if(empty($prefixes)) {
+    public function purgePrefixes(array $prefixes, array $extraHeaders = []) {
+        try {
+            if(empty($prefixes)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $response = $client->purgePrefixes($this->getZoneIdentifier(), $prefixes, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge prefixes " . implode(",", $prefixes) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $response = $client->purgePrefixes($this->getZoneIdentifier(), $prefixes);
-        return $response;
     }
 
     /**
@@ -346,7 +379,7 @@ class CloudflarePurgeService {
     /**
      * Method to purge a DataObject that has an AbsoluteLink() or Link() method (if using base_url for latter)
      */
-    final protected function purgeRecordWithAbsoluteLink(DataObject $record): ?ApiResponse {
+    final protected function purgeRecordWithAbsoluteLink(DataObject $record, array $extraHeaders = []): ?ApiResponse {
         $urls = [];
         $baseURL = self::config()->get('base_url');
         if($baseURL) {
@@ -354,48 +387,55 @@ class CloudflarePurgeService {
         } else {
             $url = $record->AbsoluteLink();
         }
+        if(!$url) {
+            // cannot purge if no value
+            return null;
+        }
         $urls[] = $url;
-        Logger::log('purgeRecordWithAbsoluteLink purgeURLs calling ' . $url, 'INFO');
-        return $this->purgeURLs($urls);
+        return $this->purgeURLs($urls, $extraHeaders);
     }
 
     /**
      * Given a page, purge its published URL
      */
-    public function purgePage(SiteTree $page) : ?ApiResponse {
-        Logger::log('purgeFile called', 'INFO');
-        return $this->purgeRecordWithAbsoluteLink($page);
+    public function purgePage(SiteTree $page, array $extraHeaders = []) : ?ApiResponse {
+        return $this->purgeRecordWithAbsoluteLink($page, $extraHeaders);
     }
 
     /**
      * Give a file, purge its published URL
      * This is functionally the same as purgePage as the API is consistent between the two
      */
-    public function purgeFile(File $file) : ?ApiResponse {
-        Logger::log('purgeFile called', 'INFO');
-        return $this->purgeRecordWithAbsoluteLink($file);
+    public function purgeFile(File $file, array $extraHeaders = []) : ?ApiResponse {
+        return $this->purgeRecordWithAbsoluteLink($file, $extraHeaders);
     }
 
     /**
      * Purge an object
      */
-    public function purgeRecord(object $object) : ?ApiResponse {
-        if(method_exists($object, 'getPurgeUrlList') || (method_exists($object, 'hasMethod') && $object->hasMethod('getPurgeUrlList'))) {
-            // custom record handling - allows purge of multiple URLs linked to an object
-            $urls = $object->getPurgeUrlList();
-            if(!is_array($urls)) {
-                Logger::log("purgeRecord - purgeURLs requires an array of URLs!", "NOTICE");
-                return null;
+    public function purgeRecord(object $object, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(method_exists($object, 'getPurgeUrlList') || (method_exists($object, 'hasMethod') && $object->hasMethod('getPurgeUrlList'))) {
+                // custom record handling - allows purge of multiple URLs linked to an object
+                $urls = $object->getPurgeUrlList();
+                if(!is_array($urls)) {
+                    throw new \InvalidArgumentException("Object with getPurgeUrlList method should return an array of urls from that method");
+                } else {
+                    return $this->purgeURLs($urls, $extraHeaders);
+                }
+            } else if($object instanceof SiteTree) {
+                return $this->purgePage($object, $extraHeaders);
+            } else if($object instanceof File) {
+                return $this->purgeFile($object, $extraHeaders);
             } else {
-                return $this->purgeURLs($urls);
+                throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
             }
-        } else if($object instanceof SiteTree) {
-            return $this->purgePage($object);
-        } else if($object instanceof File) {
-            return $this->purgeFile($object);
-        } else {
-            throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            Logger::log("purgeRecord failed: " . $invalidArgumentException->getMessage(), "NOTICE");
+        } catch (\Exception $exception) {
+            Logger::log("purgeRecord general exception: " . $exception->getMessage(), "NOTICE");
         }
+        return null;
     }
 
 }

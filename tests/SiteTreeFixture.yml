@@ -1,0 +1,5 @@
+SilverStripe\CMS\Model\SiteTree:
+  page-1:
+    Title: 'Page 1'
+    URLSegment: page-1
+    ParentID: 0
