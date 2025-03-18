@@ -66,4 +66,17 @@ class ApiResponse {
         return $successes;
     }
 
+    /**
+     * Get all the exceptions thrown, if any
+     */
+    public function getExceptions() : array {
+        $exceptions = [];
+        foreach($this->results as $result) {
+            if($exception = $result->getException()) {
+                $exceptions[] = $exception;
+            }
+        }
+        return $exceptions;
+    }
+
 }
