@@ -50,7 +50,7 @@ class ApiResult {
         return $this;
     }
 
-    public function getException(): \Exception {
+    public function getException(): ?\Exception {
         return $this->exception;
     }
 
