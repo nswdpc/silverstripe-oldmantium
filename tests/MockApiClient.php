@@ -32,7 +32,7 @@ class MockApiClient extends ApiClient {
         Logger::log("Calling API url='{$apiUrl}' body='{$body}' reason='{$reason}'", "INFO");
     }
 
-    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ?ApiResult {
+    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ApiResult {
         $headers = $this->getHeaders($extraHeaders);
         $result = $this->mockError ? $this->errorContents() : $this->successContents();
         $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
