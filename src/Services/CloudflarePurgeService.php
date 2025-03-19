@@ -90,6 +90,9 @@ class CloudflarePurgeService {
      */
     const URL_LIMIT_PER_REQUEST = 30;
 
+
+    private static bool $emit_headers_in_modeladmin = true;
+
     /**
      * @inheritdoc
      */
@@ -421,12 +424,12 @@ class CloudflarePurgeService {
                 if(!is_array($urls)) {
                     throw new \InvalidArgumentException("Object with getPurgeUrlList method should return an array of urls from that method");
                 } else {
-                    return $this->purgeURLs($urls, $extraHeaders);
+                    return $this->logResultOf($this->purgeURLs($urls, $extraHeaders));
                 }
             } else if($object instanceof SiteTree) {
-                return $this->purgePage($object, $extraHeaders);
+                return $this->logResultOf($this->purgePage($object, $extraHeaders));
             } else if($object instanceof File) {
-                return $this->purgeFile($object, $extraHeaders);
+                return $this->logResultOf($this->purgeFile($object, $extraHeaders));
             } else {
                 throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
             }
@@ -436,6 +439,42 @@ class CloudflarePurgeService {
             Logger::log("purgeRecord general exception: " . $exception->getMessage(), "NOTICE");
         }
         return null;
+    }
+
+    /**
+     * Proxy the ApiResponse, log the result, and return it
+     */
+    protected function logResultOf(?ApiResponse $apiResponse = null): ?ApiResponse {
+        if($apiResponse) {
+            $results = $apiResponse->getAllResults();
+            if($results != []) {
+
+                // Log results at expected levels
+                array_walk($results, function($result, $key) {
+                    $level = $result == "success" ? "INFO" : "NOTICE";
+                    Logger::log("CloudflarePurgeService: {$key}={$result}", $level);
+                });
+
+                if(static::config()->get('emit_headers_in_modeladmin')) {
+                    // Add headers to response if in administration area
+                    // NB: due to the way AssetAdmin handles responses, these are not added to the final response
+                    $controller = Controller::has_curr() ? Controller::curr() : null;
+                    if($controller && ($controller instanceof \SilverStripe\Admin\LeftAndMain)) {
+                        $response = $controller->getResponse();
+                        if(isset($results['success'])) {
+                            $response->addHeader("X-CF-Purge-Success", $results['success']);
+                        }
+                        if(isset($results['exception'])) {
+                            $response->addHeader("X-CF-Purge-Exception", $results['exception']);
+                        }
+                        if(isset($results['error'])) {
+                            $response->addHeader("X-CF-Purge-Error", $results['error']);
+                        }
+                    }
+                }
+            }
+        }
+        return $apiResponse;
     }
 
 }

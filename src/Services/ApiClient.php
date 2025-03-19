@@ -111,7 +111,6 @@ class ApiClient {
                 $response->addResult($result);
             }
         }
-        $this->logResults($response);
         return $response;
     }
 
@@ -140,72 +139,6 @@ class ApiClient {
             $response->addResult($result);
         }
         return $response;
-    }
-
-    /**
-     * Log results, in the current case by adding response headers that can be inspected
-     * when manually publishing/saving/deleting records in the administration area
-     * API response exception errors are logged regardless
-     * @param ApiResponse $apiResponse the API response data, see getPurgeResponse
-     */
-    protected function logResults(ApiResponse $apiResponse): ?bool {
-        try {
-            if(!Controller::has_curr()) {
-                return null;
-            }
-            $controller = Controller::curr();
-            if(!($controller instanceof LeftAndMain)) {
-                return null;
-            }
-            $this->logResult($controller->getResponse(), $apiResponse);
-            return true;
-        } catch (\Exception $exception) {
-            return false;
-        }
-    }
-
-    /**
-     * Log a result to response headers based on an ApiResponse
-     * @param HTTPResponse $response the response object for the current request (e.g a publish attempt on a website)
-     * @param ApiResponse $apiResponse the API response data, see getPurgeResponse
-     */
-    protected function logResult(HTTPResponse $response, ApiResponse $apiResponse): void {
-        $successes = $apiResponse->getSuccesses();
-        $errors = $apiResponse->getErrors();
-        $exceptions = $apiResponse->getExceptions();
-        if($exceptions !== []) {
-            // no response from API
-            $exceptionHeader = [];
-            array_walk(
-                $exceptions,
-                function($exception, $key) use (&$exceptionHeader) {
-                    $exceptionHeader[] = "(" . $exception->getCode() . ") " . get_class($exception);
-                }
-            );
-            $response->addHeader('X-CF-API-Exceptions', $this->sanitiseHeaderValue(implode(", ", $exceptionHeader)));
-        }
-        if($successes != []) {
-            // has some success, the values are the ids from the response
-            $response->addHeader('X-CF-API-Success', $this->sanitiseHeaderValue(implode(", ", $successes)));
-        }
-        if($errors != []) {
-            // has some error
-            $errorHeader = [];
-            array_walk(
-                $errors,
-                function($error, $key) use (&$errorHeader) {
-                    $errorHeader[] = "(" . $error->code . ") " . $error->message;
-                }
-            );
-            $response->addHeader('X-CF-API-Error', $this->sanitiseHeaderValue(implode(", ", $errorHeader)));
-        }
-    }
-
-    /**
-     * Remove all non-ASCII chrs from the header value
-     */
-    private function sanitiseHeaderValue(string $value): string {
-        return preg_replace("/[[:^ascii:]]+/", " ", $value);
     }
 
 }
