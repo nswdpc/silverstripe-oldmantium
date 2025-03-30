@@ -54,8 +54,15 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     private static $summary_fields = [
         'Title' => 'Title',
         'TypeString' => 'Type',
-        'TypeValues.csv' => 'Values',
+        'TypeValuesSummary' => 'Values',
     ];
+
+    /**
+     * Return TypeValues values as a string
+     */
+    public function getTypeValuesSummary(): string {
+        return $this->dbObject('TypeValues')->Implode();
+    }
 
     /**
      * Get available types to select from in the administration screen
