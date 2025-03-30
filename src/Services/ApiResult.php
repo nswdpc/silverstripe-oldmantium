@@ -11,7 +11,9 @@ class ApiResult {
 
     protected $body = [];
 
-    public function __construct(object $result, array $body = []) {
+    protected ?\Exception $exception = null;// exceptions thown when handling the result
+
+    public function __construct(?object $result = null, array $body = []) {
         $this->errors = $result->errors ?? [];
         $this->messages = $result->messages ?? [];
         $this->result = $result->result ?? null;
@@ -41,6 +43,15 @@ class ApiResult {
 
     public function getMessages() : array {
         return $this->messages;
+    }
+
+    public function setException(\Exception $exception): static {
+        $this->exception = $exception;
+        return $this;
+    }
+
+    public function getException(): ?\Exception {
+        return $this->exception;
     }
 
 }

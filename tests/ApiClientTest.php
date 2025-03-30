@@ -49,7 +49,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         $response = $apiClient->purgeUrls('test-zone-id', $urls, $headers);
         $this->assertTrue( $response->allSuccess() );
         $this->assertFalse( $response->hasErrors() );
-        $data = $apiClient->getMockRequestData();
+        $data = MockApiClient::getLastRequestData();
         $this->assertArrayHasKey('CF-Device-Type', $data['options']['headers']);
         $this->assertArrayHasKey('CF-IPCountry', $data['options']['headers']);
         $this->assertEquals('mobile', $data['options']['headers']['CF-Device-Type']);

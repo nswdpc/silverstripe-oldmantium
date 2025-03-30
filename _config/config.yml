@@ -8,3 +8,6 @@ NSWDPC\Utilities\Cloudflare\PurgeRecord:
 SilverStripe\CMS\Model\SiteTree:
   extensions:
     - 'NSWDPC\Utilities\Cloudflare\SiteTreeExtension'
+SilverStripe\Assets\File:
+  extensions:
+    - 'NSWDPC\Utilities\Cloudflare\FileExtension'

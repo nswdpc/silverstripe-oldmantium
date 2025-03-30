@@ -12,7 +12,7 @@ use NSWDPC\Utilities\Cloudflare\Logger;
  */
 class MockApiClient extends ApiClient {
 
-    protected $mockRequestData = [];
+    protected static $requestHistory = [];
 
     protected $mockError = false;
 
@@ -26,21 +26,47 @@ class MockApiClient extends ApiClient {
         return $this;
     }
 
-    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ?ApiResult {
+    protected function logRequest(string $apiUrl, array $options, array $headers): void {
+        $reason = $headers[static::HEADER_PURGE_REASON] ?? '';
+        $body = json_encode($options['json'] ?? '');
+        Logger::log("Calling API url='{$apiUrl}' body='{$body}' reason='{$reason}'", "INFO");
+    }
+
+    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ApiResult {
         $headers = $this->getHeaders($extraHeaders);
         $result = $this->mockError ? $this->errorContents() : $this->successContents();
         $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
-        $this->mockRequestData = [
-            'url' => $this->getApiUrl($zoneId),
-            'options' => $this->getOptions($headers, $body),
+        $apiUrl = $this->getApiUrl($zoneId);
+        $options = $this->getOptions($headers, $body);
+        static::$requestHistory[] = [
+            'url' => $apiUrl,
+            'options' => $options,
             'result' => $result,
             'decoded' => $decoded
         ];
+        $this->logRequest($apiUrl, $options, $headers);
         return new ApiResult($decoded, $body);
     }
 
-    public function getMockRequestData() : array {
-        return $this->mockRequestData;
+    public static function getRequestHistory(): array {
+        return static::$requestHistory;
+    }
+
+    public static function clearRequestHistory(): void {
+        static::$requestHistory = [];
+    }
+
+    public static function getRequestDataIndex(int $index) : ?array {
+        return static::$requestHistory[$index] ?? null;
+    }
+
+    public static function getFirstRequestData(): ?array {
+        return static::getRequestDataIndex(0);
+    }
+
+    public static function getLastRequestData(): ?array {
+        $last = array_key_last(static::getRequestHistory());
+        return !is_null($last) ? static::getRequestDataIndex($last) : null;
     }
 
     protected function errorContents() : string {

@@ -16,7 +16,7 @@ class CloudflareAuthTest extends SapphireTest
 
     protected $usesDatabase = false;
 
-    public function setUp() : void {
+    protected function setUp() : void {
         parent::setUp();
         // Mock a CloudflarePurgeService
         Injector::inst()->load([
@@ -38,7 +38,7 @@ class CloudflareAuthTest extends SapphireTest
         $response = $service->purgeUrls($urls);
         $client = $service->getApiClient();
         $this->assertInstanceOf(MockApiClient::class, $client, "Service is not a MockApiClient");
-        $data = $client->getMockRequestData();
+        $data = MockApiClient::getLastRequestData();
         $this->assertEquals( 'Bearer test-auth-token', $data['options']['headers']['Authorization'] );
     }
 

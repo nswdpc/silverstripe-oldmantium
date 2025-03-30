@@ -66,7 +66,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getMockRequestData();
+        $data = MockApiClient::getLastRequestData();
         $urls = $record->getPurgeUrlList();
         CloudflarePurgeService::removeReadingMode($urls);
 
@@ -113,7 +113,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $job->process();
 
         // check data
-        $data = $this->client->getAdapter()->getMockRequestData();
+        $data = MockApiClient::getLastRequestData();
         $urls = $record->getPurgeUrlList();
         CloudflarePurgeService::removeReadingMode($urls);
 
@@ -169,8 +169,8 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgePage($page);
-        $data = $this->client->getAdapter()->getMockRequestData();
+        $response = $this->client->purgeRecord($page);
+        $data = MockApiClient::getLastRequestData();
         $expected = "https://example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
@@ -185,9 +185,23 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgePage($page);
-        $data = $this->client->getAdapter()->getMockRequestData();
+        $response = $this->client->purgeRecord($page);
+        $data = MockApiClient::getLastRequestData();
         $expected = "https://another.example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
+    }
+
+    public function testPurgeRecordWithPurgeUrlListMethod() {
+        $record = TestPurgeUrlListRecord::create();
+        $record->Title = 'TestPurgeUrlListRecord';
+        $record->write();
+        $response = $this->client->purgeRecord($record);
+        $data = MockApiClient::getLastRequestData();
+        $expected = [
+            'https://example.com/TestPurgeUrlListRecord.html',
+            'https://example.com/TestPurgeUrlListRecord.html?alternateformat=1',
+            'https://example.com/TestPurgeUrlListRecord.html?format=html'
+        ];
+        $this->assertEquals($expected, $data['options']['json']['files']);
     }
 }

@@ -66,4 +66,67 @@ class ApiResponse {
         return $successes;
     }
 
+    /**
+     * Get all the exceptions thrown, if any
+     */
+    public function getExceptions() : array {
+        $exceptions = [];
+        foreach($this->results as $result) {
+            if($exception = $result->getException()) {
+                $exceptions[] = $exception;
+            }
+        }
+        return $exceptions;
+    }
+
+    /**
+     * Get all results from this response in an array format
+     * Possible keys are success, error, exception
+     */
+    public function getAllResults(): array {
+        try {
+            $results = [];
+            $successes = $this->getSuccesses();
+            $errors = $this->getErrors();
+            $exceptions = $this->getExceptions();
+            if($exceptions !== []) {
+                // no response from API
+                $exceptionHeader = [];
+                array_walk(
+                    $exceptions,
+                    function($exception, $key) use (&$exceptionHeader) {
+                        $exceptionHeader[] = "(" . $exception->getCode() . ") " . get_class($exception);
+                    }
+                );
+                $results['exception'] = $this->sanitiseResultValue(implode(", ", $exceptionHeader));
+            }
+            if($successes != []) {
+                // has some success, the values are the ids from the response
+                $results['success'] = $this->sanitiseResultValue(implode(", ", $successes));
+            }
+            if($errors != []) {
+                // has some error
+                $errorHeader = [];
+                array_walk(
+                    $errors,
+                    function($error, $key) use (&$errorHeader) {
+                        $code = isset($error->code) ? $error->code : "?";
+                        $message = isset($error->message) ? $error->message : "?";
+                        $errorHeader[] = "({$code}) {$message}";
+                    }
+                );
+                $results['error'] = $this->sanitiseResultValue(implode(", ", $errorHeader));
+            }
+        } catch (\Exception $exception) {
+        }
+        return $results;
+    }
+
+    /**
+     * Remove all non-ASCII chrs from the header value
+     */
+    private function sanitiseResultValue(string $value): string {
+        return preg_replace("/[[:^ascii:]]+/", " ", $value);
+    }
+
 }

@@ -10,6 +10,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Path;
+use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 use SilverStripe\Security\Permission;
 use SilverStripe\Versioned\Versioned;
@@ -89,6 +90,9 @@ class CloudflarePurgeService {
      */
     const URL_LIMIT_PER_REQUEST = 30;
 
+
+    private static bool $emit_headers_in_modeladmin = true;
+
     /**
      * @inheritdoc
      */
@@ -153,10 +157,24 @@ class CloudflarePurgeService {
         if($this->client) {
             return $this->client;
         }
+        $this->client = $this->createApiClient();
+        return $this->client;
+    }
+
+    /**
+     * Helper method to get client
+     */
+    public function getAdapter() : ?ApiClient {
+        return $this->getApiClient();
+    }
+
+    /**
+     * Create a new API client
+     */
+    protected function createApiClient(): ApiClient {
         $client = new GuzzleHttpClient();
         $token = self::config()->get('auth_token');
-        $this->client = new ApiClient($client, $token);
-        return $this->client;
+        return new ApiClient($client, $token);
     }
 
     /**
@@ -262,64 +280,83 @@ class CloudflarePurgeService {
      * Purge cache by tags immediately
      * @return ApiResponse
      */
-    public function purgeTags(array $tags) : ?ApiResponse {
-        if(empty($tags)) {
+    public function purgeTags(array $tags, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(empty($tags)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $response = $client->purgeTags($this->getZoneIdentifier(), $tags, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge tags " . implode(",", $tags) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $response = $client->purgeTags($this->getZoneIdentifier(), $tags);
-        return $response;
     }
 
     /**
      * Purge cache by hosts immediately
      */
-    public function purgeHosts(array $hosts) : ?ApiResponse {
-        if(empty($hosts)) {
+    public function purgeHosts(array $hosts, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(empty($hosts)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $response = $client->purgeHosts($this->getZoneIdentifier(), $hosts, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge hosts " . implode(",", $hosts) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $response = $client->purgeHosts($this->getZoneIdentifier(), $hosts);
-        return $response;
     }
 
     /**
      * Purge cache by urls immediately
      * This method modifies the URLs provided to ensure they are absolute URLs
      */
-    public function purgeURLs(array $urls) : ?ApiResponse {
-
-        if(empty($urls)) {
+    public function purgeURLs(array $urls, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(empty($urls)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $urls = $this->prepUrls($urls);
+            $response = $client->purgeUrls($this->getZoneIdentifier(), $urls, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge URLs " . implode(",", $urls) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $urls = $this->prepUrls($urls);
-        $response = $client->purgeUrls($this->getZoneIdentifier(), $urls);
-        return $response;
     }
 
     /**
      * Purge by prefix
      */
-    public function purgePrefixes(array $prefixes) {
-        if(empty($prefixes)) {
+    public function purgePrefixes(array $prefixes, array $extraHeaders = []) {
+        try {
+            if(empty($prefixes)) {
+                return null;
+            }
+            $client = $this->getApiClient();
+            if(!$client) {
+                return null;
+            }
+            $response = $client->purgePrefixes($this->getZoneIdentifier(), $prefixes, $extraHeaders);
+            return $response;
+        } catch (\Exception $exception) {
+            Logger::log("Failed to purge prefixes " . implode(",", $prefixes) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
         }
-        $client = $this->getApiClient();
-        if(!$client) {
-            return null;
-        }
-        $response = $client->purgePrefixes($this->getZoneIdentifier(), $prefixes);
-        return $response;
     }
 
     /**
@@ -343,19 +380,101 @@ class CloudflarePurgeService {
     }
 
     /**
-     * Given a page, purge its absolute links
-     * @param SiteTree $page page record
+     * Method to purge a DataObject that has an AbsoluteLink() or Link() method (if using base_url for latter)
      */
-    public function purgePage(SiteTree $page) : ApiResponse {
+    final protected function purgeRecordWithAbsoluteLink(DataObject $record, array $extraHeaders = []): ?ApiResponse {
         $urls = [];
         $baseURL = self::config()->get('base_url');
         if($baseURL) {
-            $url = Controller::join_links($baseURL, $page->Link());
+            $url = Controller::join_links($baseURL, $record->Link());
         } else {
-            $url = $page->AbsoluteLink();
+            $url = $record->AbsoluteLink();
+        }
+        if(!$url) {
+            // cannot purge if no value
+            return null;
         }
         $urls[] = $url;
-        return $this->purgeURLs($urls);
+        return $this->purgeURLs($urls, $extraHeaders);
+    }
+
+    /**
+     * Given a page, purge its published URL
+     */
+    public function purgePage(SiteTree $page, array $extraHeaders = []) : ?ApiResponse {
+        return $this->purgeRecordWithAbsoluteLink($page, $extraHeaders);
+    }
+
+    /**
+     * Give a file, purge its published URL
+     * This is functionally the same as purgePage as the API is consistent between the two
+     */
+    public function purgeFile(File $file, array $extraHeaders = []) : ?ApiResponse {
+        return $this->purgeRecordWithAbsoluteLink($file, $extraHeaders);
+    }
+
+    /**
+     * Purge an object
+     */
+    public function purgeRecord(object $object, array $extraHeaders = []) : ?ApiResponse {
+        try {
+            if(method_exists($object, 'getPurgeUrlList') || (method_exists($object, 'hasMethod') && $object->hasMethod('getPurgeUrlList'))) {
+                // custom record handling - allows purge of multiple URLs linked to an object
+                $urls = $object->getPurgeUrlList();
+                if(!is_array($urls)) {
+                    throw new \InvalidArgumentException("Object with getPurgeUrlList method should return an array of urls from that method");
+                } else {
+                    return $this->logResultOf($this->purgeURLs($urls, $extraHeaders));
+                }
+            } else if($object instanceof SiteTree) {
+                return $this->logResultOf($this->purgePage($object, $extraHeaders));
+            } else if($object instanceof File) {
+                return $this->logResultOf($this->purgeFile($object, $extraHeaders));
+            } else {
+                throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
+            }
+        } catch (\InvalidArgumentException $invalidArgumentException) {
+            Logger::log("purgeRecord failed: " . $invalidArgumentException->getMessage(), "NOTICE");
+        } catch (\Exception $exception) {
+            Logger::log("purgeRecord general exception: " . $exception->getMessage(), "NOTICE");
+        }
+        return null;
+    }
+
+    /**
+     * Proxy the ApiResponse, log the result, and return it
+     */
+    protected function logResultOf(?ApiResponse $apiResponse = null): ?ApiResponse {
+        if($apiResponse) {
+            $results = $apiResponse->getAllResults();
+            if($results != []) {
+
+                // Log results at expected levels
+                array_walk($results, function($result, $key) {
+                    $level = $result == "success" ? "INFO" : "NOTICE";
+                    Logger::log("CloudflarePurgeService: {$key}={$result}", $level);
+                });
+
+                if(static::config()->get('emit_headers_in_modeladmin')) {
+                    // Add headers to response if in administration area
+                    // NB: due to the way AssetAdmin handles responses, these are not added to the final response
+                    $controller = Controller::has_curr() ? Controller::curr() : null;
+                    if($controller && ($controller instanceof \SilverStripe\Admin\LeftAndMain)) {
+                        $response = $controller->getResponse();
+                        if(isset($results['success'])) {
+                            $response->addHeader("X-CF-Purge-Success", $results['success']);
+                        }
+                        if(isset($results['exception'])) {
+                            $response->addHeader("X-CF-Purge-Exception", $results['exception']);
+                        }
+                        if(isset($results['error'])) {
+                            $response->addHeader("X-CF-Purge-Error", $results['error']);
+                        }
+                    }
+                }
+            }
+        }
+        return $apiResponse;
     }
 
 }

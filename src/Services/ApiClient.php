@@ -3,8 +3,13 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use GuzzleHttp\ClientInterface;
+use SilverStripe\Admin\LeftAndMain;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\HTTPResponse;
 
 class ApiClient {
+
+    public const HEADER_PURGE_REASON = 'X-Purge-Reason';
 
     /**
      * @var string
@@ -45,6 +50,10 @@ class ApiClient {
         return $headers;
     }
 
+    /**
+     * Get options for request.
+     * See https://docs.guzzlephp.org/en/latest/request-options.html#json for json key usage
+     */
     protected function getOptions(array $headers, array $body) : array {
         $options = [];
         $options['headers'] = $headers;
@@ -52,21 +61,45 @@ class ApiClient {
         return $options;
     }
 
-    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ?ApiResult {
+    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ApiResult {
         try {
+            // Perform the API request and return a result as an ApiResult
             $headers = $this->getHeaders($extraHeaders);
             $response = $this->client->request('POST', $this->getApiUrl($zoneId), $this->getOptions($headers, $body));
             $result = $response->getBody()->getContents();
             $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
-            return new ApiResult($decoded, $body);
-        } catch (\JsonException $e) {
-            Logger::log("JSON decode error on response from Cloudflare API request:" . $e->getMessage(), "WARNING");
-        } catch (\Exception $e) {
-            Logger::log("Cloudflare API error. " . $e->getMessage(), "WARNING");
+            $result = new ApiResult($decoded, $body);
+        } catch (\JsonException $jsonException) {
+            // Got a result, but could not decoded it
+            Logger::log("Cloudflare API response JSON handling error. " . $jsonException->getMessage(), "NOTICE");
+            $result = new ApiResult();
+            $result->setException($jsonException);
+        } catch (\GuzzleHttp\Exception\RequestException $requestException) {
+            // when a RequestException occurs, the response could be available
+            // it may contain response information
+            Logger::log("Cloudflare API client request error. " . $requestException->getMessage(), "NOTICE");
+            try {
+                $decoded = null;
+                if($response = $requestException->getResponse()) {
+                    $result = $response->getBody()->getContents();
+                    $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
+                }
+            } catch (\Exception $e) {}
+            // store the result
+            $result = new ApiResult($decoded);
+            $result->setException($requestException);
+        } catch (\Exception $exception) {
+            // General exception
+            Logger::log("Cloudflare API client general error. " . $exception->getMessage(), "NOTICE");
+            $result = new ApiResult();
+            $result->setException($exception);
         }
-        return null;
+        return $result;
     }
 
+    /**
+     * Get the response data as an ApiResponse object, which may contain multiple ApiResult objects
+     */
     protected function getPurgeResponse(string $zoneId, string $purgeType, array $values, array $extraHeaders = []) : ApiResponse {
         $chunks = array_chunk($values, self::CHUNK_SIZE);
         $response = new ApiResponse();
