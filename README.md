@@ -55,7 +55,7 @@ NSWDPC\Utilities\Cloudflare\CloudflarePurgeService:
 
 ### Versioned DataObject
 
-Give a Versioned `DataObject` the ability to purge from Cloudfront cache
+Give a Versioned `DataObject` the ability to purge from Cloudflare cache
 
 ```yaml
 My\Namespaced\Record:
