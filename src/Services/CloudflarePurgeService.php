@@ -202,11 +202,11 @@ class CloudflarePurgeService
         $scheme = parse_url((string) $baseURL, PHP_URL_SCHEME);
         $host = parse_url((string) $baseURL, PHP_URL_HOST);
 
-        if ($scheme === 0 || ($scheme === '' || $scheme === '0') || $scheme === [] || $scheme === false || $scheme === null) {
+        if (!is_string($scheme) || $scheme === '') {
             throw new \Exception("base_url needs to have a scheme");
         }
 
-        if ($host === 0 || ($host === '' || $host === '0') || $host === [] || $host === false || $host === null) {
+        if (!is_string($host) || $host === '') {
             throw new \Exception("base_url needs to have a host");
         }
 
