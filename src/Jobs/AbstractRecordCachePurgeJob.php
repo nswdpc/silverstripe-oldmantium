@@ -84,8 +84,12 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     {
 
         $record = $this->getObject(self::RECORD_NAME);
-        if (!$record || !$record instanceof CloudflarePurgeable) {
-            throw new \Exception("Record not found or not CloudflarePurgeable");
+        if (!$record) {
+            throw new \Exception("Record not found");
+        }
+
+        if(!$record instanceof CloudflarePurgeable && !$record->hasExtension(DataObjectPurgeable::class)) {
+            throw new \Exception("Record is not CloudflarePurgeable and does not have DataObjectPurgeable extension applied");
         }
 
         $type = $this->getPurgeType();
