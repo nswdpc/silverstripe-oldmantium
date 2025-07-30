@@ -242,9 +242,9 @@ class DataObjectPurgeable extends Extension implements CloudflarePurgeable
     /**
      * Return QueuedJobDescriptor records linked to the owner record
      */
-    public function getCurrentPurgeJobDescriptors(array $implementations = []): ArrayList
+    public function getCurrentPurgeJobDescriptors(array $implementations = []): \SilverStripe\Model\List\ArrayList
     {
-        $list = ArrayList::create();
+        $list = \SilverStripe\Model\List\ArrayList::create();
         // ignore these status
         $statii = [
             QueuedJob::STATUS_RUN,

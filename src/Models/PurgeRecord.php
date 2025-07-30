@@ -196,7 +196,7 @@ class PurgeRecord extends DataObject implements PermissionProvider
         $values = $this->getPurgeTypeValues($this->Type);
 
         if (count($values) == 0 && $this->requiresTypeValue()) {
-            throw ValidationException::create(
+            throw \SilverStripe\Core\Validation\ValidationException::create(
                 _t(self::class . '.PROVIDE_VALUES', 'Please provide one or more values')
             );
         }

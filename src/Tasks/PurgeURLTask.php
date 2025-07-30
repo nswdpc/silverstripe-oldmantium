@@ -66,6 +66,7 @@ class PurgeURLTask extends BuildTask
         }
     }
 
+    #[\Override]
     public function getOptions(): array
     {
         return [

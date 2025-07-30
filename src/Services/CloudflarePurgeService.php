@@ -474,7 +474,7 @@ class CloudflarePurgeService
                 if (static::config()->get('emit_headers_in_modeladmin')) {
                     // Add headers to response if in administration area
                     // NB: due to the way AssetAdmin handles responses, these are not added to the final response
-                    $controller = Controller::has_curr() ? Controller::curr() : null;
+                    $controller = \SilverStripe\Control\Controller::curr() instanceof \SilverStripe\Control\Controller ? Controller::curr() : null;
                     if ($controller && ($controller instanceof \SilverStripe\Admin\LeftAndMain)) {
                         $response = $controller->getResponse();
                         if (isset($results['success'])) {
