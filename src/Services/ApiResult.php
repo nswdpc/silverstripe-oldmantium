@@ -32,7 +32,7 @@ class ApiResult
         return $this->result;
     }
 
-    public function getBody()
+    public function getBody(): array
     {
         return $this->body;
     }

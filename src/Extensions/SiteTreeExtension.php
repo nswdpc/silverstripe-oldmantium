@@ -21,6 +21,7 @@ class SiteTreeExtension extends DataExtension
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
+
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-publish']);
     }
 
@@ -33,6 +34,7 @@ class SiteTreeExtension extends DataExtension
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
+
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-publishrecursive']);
     }
 
@@ -46,6 +48,7 @@ class SiteTreeExtension extends DataExtension
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
+
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-unpublish']);
     }
 }

@@ -289,6 +289,7 @@ class CloudflarePurgeService
             if (!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
+
             return $client->purgeTags($this->getZoneIdentifier(), $tags, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge tags " . implode(",", $tags) . " with error: " . $exception->getMessage(), "NOTICE");
@@ -310,6 +311,7 @@ class CloudflarePurgeService
             if (!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
+
             return $client->purgeHosts($this->getZoneIdentifier(), $hosts, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge hosts " . implode(",", $hosts) . " with error: " . $exception->getMessage(), "NOTICE");
@@ -355,6 +357,7 @@ class CloudflarePurgeService
             if (!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
+
             return $client->purgePrefixes($this->getZoneIdentifier(), $prefixes, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge prefixes " . implode(",", $prefixes) . " with error: " . $exception->getMessage(), "NOTICE");

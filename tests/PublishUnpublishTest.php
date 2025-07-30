@@ -201,6 +201,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract
         $record = TestPurgeUrlListRecord::create();
         $record->Title = 'TestPurgeUrlListRecord';
         $record->write();
+
         $this->client->purgeRecord($record);
         $data = MockApiClient::getLastRequestData();
         $expected = [

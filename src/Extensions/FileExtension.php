@@ -25,6 +25,7 @@ class FileExtension extends DataExtension
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
+
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-write']);
     }
 
@@ -40,6 +41,7 @@ class FileExtension extends DataExtension
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
+
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-delete']);
     }
 }
