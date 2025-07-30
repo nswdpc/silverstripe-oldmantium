@@ -19,7 +19,7 @@ use Symbiote\MultiValueField\ORM\FieldType\MultiValueField;
  * @property ?string $Type
  * @property mixed $TypeValues
  * @mixin \NSWDPC\Utilities\Cloudflare\DataObjectPurgeable
- * @mixin \Silverstripe\Versioned\Versioned
+ * @mixin \SilverStripe\Versioned\Versioned
  */
 class PurgeRecord extends DataObject implements PermissionProvider
 {
