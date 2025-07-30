@@ -5,19 +5,23 @@ namespace NSWDPC\Utilities\Cloudflare;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DB;
+use SilverStripe\PolyExecution\PolyOutput;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Given a set of URLs, attempt to purge them
  */
 class PurgeURLTask extends BuildTask
 {
-    protected $title = 'Cloudflare purge one or more URLs';
+    protected string $title = 'Cloudflare purge one or more URLs';
 
-    protected $description = 'Provide URLs as comma delimited values';
+    protected static string $description = 'Provide URLs as comma delimited values';
 
-    private static string $segment = "PurgeURLTask";
+    protected static string $commandName = "PurgeURLTask";
 
-    public function run($request)
+    protected function execute(InputInterface $input, PolyOutput $output): int
     {
         try {
 
@@ -25,7 +29,7 @@ class PurgeURLTask extends BuildTask
                 throw new \Exception("Not enabled");
             }
 
-            $urls = $request->getVar('url');
+            $urls = $input->getOption('url');
             if (!is_string($urls)) {
                 throw new \Exception("Please provide a url parameter, with one or more URLs");
             }
@@ -41,21 +45,32 @@ class PurgeURLTask extends BuildTask
             $successes = $response->getSuccesses();
             $errors = $response->getErrors();
             if ($count == 0) {
-                DB::alteration_message("No response / check logs", "error");
+                $output->writeln("No response / check logs");
             } else {
-                DB::alteration_message("Completed count={$count} urls={$urlCount}", "changed");
+                $output->writeln("Completed count={$count} urls={$urlCount}");
             }
 
             foreach ($successes as $id) {
-                DB::alteration_message("Success", "changed");
+                $output->writeln("Success");
             }
 
             foreach ($errors as $error) {
-                DB::alteration_message("Error code={$error->code} message={$error->message}", "error");
+                $output->writeln("Error code={$error->code} message={$error->message}");
             }
+
+            return Command::SUCCESS;
+
         } catch (\Exception $exception) {
-            DB::alteration_message("Error: " . $exception->getMessage(), "error");
+            $output->writeln("Error: " . $exception->getMessage());
+            return Command::FAILURE;
         }
+    }
+
+    public function getOptions(): array
+    {
+        return [
+            new InputOption('url', null, InputOption::VALUE_NONE, 'URL(s) to purge in the configured zone. Separate multiple urls with a comma'),
+        ];
     }
 
 }

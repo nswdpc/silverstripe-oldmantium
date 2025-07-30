@@ -4,16 +4,16 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * File purge handling
  * As files can have different URLs depending on their stage, this hooks into
  * onAfterWrite() on onBeforeDelete()
  * @author James
- * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\Assets\File & static)>
+ * @extends \SilverStripe\Core\Extension<(\SilverStripe\Assets\File & static)>
  */
-class FileExtension extends DataExtension
+class FileExtension extends Extension
 {
     /**
      * Purge the owner record URL after write

@@ -9,7 +9,7 @@ use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\DatetimeField;
 use SilverStripe\Forms\NumericField;
 use SilverStripe\ORM\ArrayList;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\Versioned\Versioned;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
@@ -20,9 +20,9 @@ use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
  * @author James
  * @property ?string $CachePurgeAt
  * @property float $CacheMaxAge
- * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Utilities\Cloudflare\PurgeRecord & static)>
+ * @extends \SilverStripe\Core\Extension<(\NSWDPC\Utilities\Cloudflare\PurgeRecord & static)>
  */
-class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
+class DataObjectPurgeable extends Extension implements CloudflarePurgeable
 {
     /**
      * @var string

@@ -4,14 +4,14 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * SiteTree purge handling
  * @author James
- * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\CMS\Model\SiteTree & static)>
+ * @extends \SilverStripe\Core\Extension<(\SilverStripe\CMS\Model\SiteTree & static)>
  */
-class SiteTreeExtension extends DataExtension
+class SiteTreeExtension extends Extension
 {
     /**
      * Purge the owner record URL on publish
