@@ -13,11 +13,11 @@ use SilverStripe\Dev\SapphireTest;
  */
 class CloudflareAuthTest extends SapphireTest
 {
-
     protected $usesDatabase = false;
 
     #[\Override]
-    protected function setUp() : void {
+    protected function setUp(): void
+    {
         parent::setUp();
         // Mock a CloudflarePurgeService
         Injector::inst()->load([
@@ -30,17 +30,18 @@ class CloudflareAuthTest extends SapphireTest
     /**
      * Test that the service returns the APIToken adapter by default
      */
-    public function testAPITokenAuthAdapter(): void {
-        Config::modify()->set( MockCloudflarePurgeService::class, 'auth_token', 'test-auth-token');
-        Config::modify()->set( MockCloudflarePurgeService::class, 'enabled', true);
-        $service = Injector::inst()->get( CloudflarePurgeService::class );
+    public function testAPITokenAuthAdapter(): void
+    {
+        Config::modify()->set(MockCloudflarePurgeService::class, 'auth_token', 'test-auth-token');
+        Config::modify()->set(MockCloudflarePurgeService::class, 'enabled', true);
+        $service = Injector::inst()->get(CloudflarePurgeService::class);
         $this->assertInstanceOf(MockCloudflarePurgeService::class, $service, "Service is not a MockCloudflarePurgeService");
         $urls = ['https://example.com/foo'];
         $service->purgeUrls($urls);
         $client = $service->getApiClient();
         $this->assertInstanceOf(MockApiClient::class, $client, "Service is not a MockApiClient");
         $data = MockApiClient::getLastRequestData();
-        $this->assertEquals( 'Bearer test-auth-token', $data['options']['headers']['Authorization'] );
+        $this->assertEquals('Bearer test-auth-token', $data['options']['headers']['Authorization']);
     }
 
 }

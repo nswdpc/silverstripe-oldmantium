@@ -3,17 +3,12 @@
 namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Control\Director;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\ValidationException;
-use SilverStripe\Forms\NumericField;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
-use Symbiote\MultiValueField\Fields\MultiValueListField;
 use Symbiote\MultiValueField\Fields\MultiValueTextField;
-use Symbiote\MultiValueField\Fields\MultiValueCheckboxField;
 use Symbiote\MultiValueField\ORM\FieldType\MultiValueField;
 
 /**
@@ -26,8 +21,8 @@ use Symbiote\MultiValueField\ORM\FieldType\MultiValueField;
  * @mixin \NSWDPC\Utilities\Cloudflare\DataObjectPurgeable
  * @mixin \Silverstripe\Versioned\Versioned
  */
-class PurgeRecord extends DataObject implements PermissionProvider {
-
+class PurgeRecord extends DataObject implements PermissionProvider
+{
     /**
      * @inheritdoc
      */
@@ -64,7 +59,8 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     /**
      * Return TypeValues values as a string
      */
-    public function getTypeValuesSummary(): string {
+    public function getTypeValuesSummary(): string
+    {
         return $this->dbObject('TypeValues')->Implode();
     }
 
@@ -72,7 +68,8 @@ class PurgeRecord extends DataObject implements PermissionProvider {
      * Get available types to select from in the administration screen
      * The values of these types map to *CachePurgeJob class names
      */
-    public function getTypes(): array {
+    public function getTypes(): array
+    {
         $types = [
             CloudflarePurgeService::TYPE_HOST,
             CloudflarePurgeService::TYPE_PREFIX,
@@ -80,7 +77,7 @@ class PurgeRecord extends DataObject implements PermissionProvider {
             CloudflarePurgeService::TYPE_TAG
         ];
         $result = [];
-        foreach($types as $type) {
+        foreach ($types as $type) {
             $result[ $type ] = $this->getTypeString($type);
         }
 
@@ -90,9 +87,10 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     /**
      * Helper method to get translated version of Type value
      */
-    public function getTypeString($type = null) : string {
+    public function getTypeString($type = null): string
+    {
         $type = $type ?: $this->Type;
-        if(!$type) {
+        if (!$type) {
             return _t(self::class . '.UNKNOWN', 'Unknown');
         } else {
             return _t(self::class . '.TYPE_' . strtoupper((string) $type), $type);
@@ -105,35 +103,38 @@ class PurgeRecord extends DataObject implements PermissionProvider {
         $fields = parent::getCMSFields();
 
         $fields->addFieldsToTab(
-            'Root.Main', [
-            DropdownField::create(
-                'Type',
-                _t(self::class . '.TYPE', 'Type'),
-                $this->getTypes()
-            )->setEmptyString('')->setDescription(
-                _t(
-                    self::class .'.CHANGE_TYPE_REMOVES_VALUES',
-                    "Changing this value will remove currently saved 'Values' entries"
+            'Root.Main',
+            [
+                DropdownField::create(
+                    'Type',
+                    _t(self::class . '.TYPE', 'Type'),
+                    $this->getTypes()
+                )->setEmptyString('')->setDescription(
+                    _t(
+                        self::class .'.CHANGE_TYPE_REMOVES_VALUES',
+                        "Changing this value will remove currently saved 'Values' entries"
+                    )
+                ),
+                MultiValueTextField::create(
+                    'TypeValues',
+                    _t(self::class . '.TYPE_VALUES', 'Values')
+                )->setDescription(
+                    _t(
+                        self::class .'.ADD_PATHS_OR_URLS',
+                        "Add paths or URLs in the currently configured zone"
+                    )
                 )
-            ),
-            MultiValueTextField::create(
-                'TypeValues',
-                _t(self::class . '.TYPE_VALUES', 'Values')
-            )->setDescription(
-                _t(
-                    self::class .'.ADD_PATHS_OR_URLS',
-                    "Add paths or URLs in the currently configured zone"
-                )
-            )
-        ]);
+            ]
+        );
         return $fields;
     }
 
     /**
      * This instance of PurgeRecord only has the configured type
      */
-    public function getPurgeTypes() : array  {
-        if($this->Type) {
+    public function getPurgeTypes(): array
+    {
+        if ($this->Type) {
             return [
                 $this->Type
             ];
@@ -145,15 +146,16 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     /**
      * Get the type values that need to be purged
      */
-    public function getPurgeTypeValues($type) : array {
-        if($type == $this->Type) {
+    public function getPurgeTypeValues($type): array
+    {
+        if ($type == $this->Type) {
             try {
                 $items = $this->TypeValues;
-                if($items instanceof MultiValueField) {
+                if ($items instanceof MultiValueField) {
                     $items = $items->getValue();
                 }
 
-                if(is_array($items)) {
+                if (is_array($items)) {
                     return $items;
                 }
             } catch (\Exception) {
@@ -167,14 +169,16 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     /**
      * Clear related jobs when this record is unpublished
      */
-    public function clearPurgeJobsOnUnPublish() : bool {
+    public function clearPurgeJobsOnUnPublish(): bool
+    {
         return true;
     }
 
     /**
      * Retrict types that require values
      */
-    public function requiresTypeValue() : bool {
+    public function requiresTypeValue(): bool
+    {
         return true;
     }
 
@@ -185,20 +189,20 @@ class PurgeRecord extends DataObject implements PermissionProvider {
     public function onBeforeWrite()
     {
         parent::onBeforeWrite();
-        if($this->exists() && $this->isChanged('Type')) {
+        if ($this->exists() && $this->isChanged('Type')) {
             $this->TypeValues = null;
         }
 
-        $values = $this->getPurgeTypeValues( $this->Type );
+        $values = $this->getPurgeTypeValues($this->Type);
 
-        if(count($values) == 0 && $this->requiresTypeValue()) {
+        if (count($values) == 0 && $this->requiresTypeValue()) {
             throw ValidationException::create(
                 _t(self::class . '.PROVIDE_VALUES', 'Please provide one or more values')
             );
         }
 
-        if($this->Type == CloudflarePurgeService::TYPE_URL) {
-            foreach($values as $i => $value) {
+        if ($this->Type == CloudflarePurgeService::TYPE_URL) {
+            foreach ($values as $i => $value) {
                 $values[$i] = Director::absoluteURL($value);
             }
 

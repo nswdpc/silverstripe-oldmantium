@@ -13,10 +13,10 @@ require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
  */
 class BaseURLTest extends CloudflarePurgeTestAbstract
 {
-
     protected $usesDatabase = false;
 
-    public function testBaseURL(): void {
+    public function testBaseURL(): void
+    {
 
         $scheme = "https";
         $host = "alt.example.com";
@@ -51,8 +51,8 @@ class BaseURLTest extends CloudflarePurgeTestAbstract
                 => "{$baseUrl}",
         ];
 
-        foreach($urls as $inUrl => $expectedUrl) {
-            $outUrls = CloudflarePurgeService::replaceWithBaseUrl( [$inUrl] );
+        foreach ($urls as $inUrl => $expectedUrl) {
+            $outUrls = CloudflarePurgeService::replaceWithBaseUrl([$inUrl]);
             $this->assertEquals($expectedUrl, $outUrls[0], "Returned URL does not match expected");
         }
 

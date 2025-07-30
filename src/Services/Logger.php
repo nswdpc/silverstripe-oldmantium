@@ -4,7 +4,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use Psr\Log\LoggerInterface;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\Security\Security;
 
 /**
  * Shorthand logging helper class

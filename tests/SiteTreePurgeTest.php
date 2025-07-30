@@ -3,15 +3,8 @@
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\ApiClient;
-use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
-use NSWDPC\Utilities\Cloudflare\Logger;
 use SilverStripe\Assets\File;
-use SilverStripe\Assets\Dev\TestAssetStore;
 use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\Core\Config\Config;
-use SilverStripe\Core\Injector\Injector;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Versioned\Versioned;
 
 require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
@@ -21,7 +14,6 @@ require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
  */
 class SiteTreePurgeTest extends CloudflarePurgeTestAbstract
 {
-
     protected $usesDatabase = true;
 
     protected static $fixture_file = "./SiteTreeFixture.yml";
@@ -32,7 +24,8 @@ class SiteTreePurgeTest extends CloudflarePurgeTestAbstract
         parent::setUp();
     }
 
-    public function testPurgeOnPublishSingle(): void {
+    public function testPurgeOnPublishSingle(): void
+    {
         $sitetree = $this->objFromFixture(SiteTree::class, 'page-1');
         $sitetree->publishSingle();
 
@@ -41,7 +34,8 @@ class SiteTreePurgeTest extends CloudflarePurgeTestAbstract
         $this->assertEquals($sitetree->AbsoluteLink(), $data['options']['json']['files'][0]);
     }
 
-    public function testPurgeOnPublishRecursive(): void {
+    public function testPurgeOnPublishRecursive(): void
+    {
         $sitetree = $this->objFromFixture(SiteTree::class, 'page-1');
         $sitetree->publishRecursive();
 
@@ -50,7 +44,8 @@ class SiteTreePurgeTest extends CloudflarePurgeTestAbstract
         $this->assertEquals($sitetree->AbsoluteLink(), $data['options']['json']['files'][0]);
     }
 
-    public function testPurgeOnUnpublish(): void {
+    public function testPurgeOnUnpublish(): void
+    {
         $sitetree = $this->objFromFixture(SiteTree::class, 'page-1');
         $sitetree->publishSingle();// need to have a published version in order to unpublish
         // grab the link while the file is still published

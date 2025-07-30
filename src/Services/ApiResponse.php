@@ -2,57 +2,62 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use GuzzleHttp\ClientInterface;
-
-class ApiResponse {
-
+class ApiResponse
+{
     protected $results = [];
 
     /**
      * Add an API result to this response
      */
-    public function addResult(ApiResult $result) : self {
+    public function addResult(ApiResult $result): self
+    {
         $this->results[] = $result;
         return $this;
     }
 
-    public function getResults() : array {
+    public function getResults(): array
+    {
         return $this->results;
     }
 
-    public function getResultCount() : int {
+    public function getResultCount(): int
+    {
         return count($this->results);
     }
 
-    public function allSuccess() : bool {
+    public function allSuccess(): bool
+    {
         $result = array_filter(
             $this->results,
-            fn($r) => $r->isSuccess()
+            fn ($r) => $r->isSuccess()
         );
         return count($result) === count($this->results);
     }
 
-    public function hasErrors() : bool {
+    public function hasErrors(): bool
+    {
         $result = array_filter(
             $this->results,
-            fn($r): bool => count($r->getErrors()) > 0
+            fn ($r): bool => count($r->getErrors()) > 0
         );
         return $result !== [];
     }
 
-    public function getErrors() : array {
+    public function getErrors(): array
+    {
         $errors = [];
-        foreach($this->results as $result) {
+        foreach ($this->results as $result) {
             $errors = array_merge($errors, $result->getErrors());
         }
 
         return $errors;
     }
 
-    public function getSuccesses() : array {
+    public function getSuccesses(): array
+    {
         $successes = [];
-        foreach($this->results as $result) {
-            if($result->isSuccess() && ($id = $result->getId()) ) {
+        foreach ($this->results as $result) {
+            if ($result->isSuccess() && ($id = $result->getId())) {
                 $successes[] = $id;
             }
         }
@@ -63,10 +68,11 @@ class ApiResponse {
     /**
      * Get all the exceptions thrown, if any
      */
-    public function getExceptions() : array {
+    public function getExceptions(): array
+    {
         $exceptions = [];
-        foreach($this->results as $result) {
-            if($exception = $result->getException()) {
+        foreach ($this->results as $result) {
+            if ($exception = $result->getException()) {
                 $exceptions[] = $exception;
             }
         }
@@ -78,35 +84,36 @@ class ApiResponse {
      * Get all results from this response in an array format
      * Possible keys are success, error, exception
      */
-    public function getAllResults(): array {
+    public function getAllResults(): array
+    {
         try {
             $results = [];
             $successes = $this->getSuccesses();
             $errors = $this->getErrors();
             $exceptions = $this->getExceptions();
-            if($exceptions !== []) {
+            if ($exceptions !== []) {
                 // no response from API
                 $exceptionHeader = [];
                 array_walk(
                     $exceptions,
-                    function($exception, $key) use (&$exceptionHeader): void {
+                    function ($exception, $key) use (&$exceptionHeader): void {
                         $exceptionHeader[] = "(" . $exception->getCode() . ") " . $exception::class;
                     }
                 );
                 $results['exception'] = $this->sanitiseResultValue(implode(", ", $exceptionHeader));
             }
 
-            if($successes != []) {
+            if ($successes != []) {
                 // has some success, the values are the ids from the response
                 $results['success'] = $this->sanitiseResultValue(implode(", ", $successes));
             }
 
-            if($errors != []) {
+            if ($errors != []) {
                 // has some error
                 $errorHeader = [];
                 array_walk(
                     $errors,
-                    function($error, $key) use (&$errorHeader): void {
+                    function ($error, $key) use (&$errorHeader): void {
                         $code = $error->code ?? "?";
                         $message = $error->message ?? "?";
                         $errorHeader[] = "({$code}) {$message}";
@@ -123,7 +130,8 @@ class ApiResponse {
     /**
      * Remove all non-ASCII chrs from the header value
      */
-    private function sanitiseResultValue(string $value): string {
+    private function sanitiseResultValue(string $value): string
+    {
         return preg_replace("/[[:^ascii:]]+/", " ", $value);
     }
 

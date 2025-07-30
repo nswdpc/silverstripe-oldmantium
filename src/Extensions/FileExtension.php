@@ -5,7 +5,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataExtension;
-use SilverStripe\Versioned\Versioned;
 
 /**
  * File purge handling
@@ -14,8 +13,8 @@ use SilverStripe\Versioned\Versioned;
  * @author James
  * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\Assets\File & static)>
  */
-class FileExtension extends DataExtension {
-
+class FileExtension extends DataExtension
+{
     /**
      * Purge the owner record URL after write
      * File records have a different URL depending on the stage they are on.
@@ -23,7 +22,7 @@ class FileExtension extends DataExtension {
      */
     public function onAfterWrite()
     {
-        if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
+        if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-write']);
@@ -38,7 +37,7 @@ class FileExtension extends DataExtension {
      */
     public function onBeforeDelete()
     {
-        if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
+        if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled')) {
             return;
         }
         Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-delete']);

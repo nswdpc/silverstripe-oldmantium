@@ -2,8 +2,6 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use SilverStripe\Core\Injector\Injector;
-
 /**
  * Purge cache by tag or tags
  * Note: requires a CF Enterprise account
@@ -11,11 +9,11 @@ use SilverStripe\Core\Injector\Injector;
  */
 class TagCachePurgeJob extends AbstractRecordCachePurgeJob
 {
-
     /**
      * @inheritdoc
      */
-    public function getPurgeType() : string {
+    public function getPurgeType(): string
+    {
         return CloudflarePurgeService::TYPE_TAG;
     }
 
@@ -23,15 +21,17 @@ class TagCachePurgeJob extends AbstractRecordCachePurgeJob
      * @inheritdoc
      */
     #[\Override]
-    public function getTitle(): string {
+    public function getTitle(): string
+    {
         return parent::getTitle() . " - " . _t(self::class . '.JOB_TITLE', 'CF purge tag(s)');
     }
 
     /**
      * Process the job
      */
-    public function process() {
-        $this->checkPurgeResult( $this->getPurgeClient()->purgeTags( $this->checkRecordForErrors() ) );
+    public function process()
+    {
+        $this->checkPurgeResult($this->getPurgeClient()->purgeTags($this->checkRecordForErrors()));
     }
 
 }

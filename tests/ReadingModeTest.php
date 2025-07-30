@@ -3,7 +3,6 @@
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
-use NSWDPC\Utilities\Cloudflare\Logger;
 
 require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
@@ -13,10 +12,10 @@ require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
  */
 class ReadingModeTest extends CloudflarePurgeTestAbstract
 {
-
     protected $usesDatabase = false;
 
-    public function testReadingMode(): void {
+    public function testReadingMode(): void
+    {
 
         // URLs should have reading mode removed from query string
         $urls = [
@@ -43,7 +42,7 @@ class ReadingModeTest extends CloudflarePurgeTestAbstract
                 => "https://example.org/",
         ];
 
-        foreach($urls as $in => $expected) {
+        foreach ($urls as $in => $expected) {
             $parseUrls = [$in];
             CloudflarePurgeService::removeReadingMode($parseUrls);
             $this->assertEquals($expected, $parseUrls[0], "Returned URL does not match expected");

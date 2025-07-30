@@ -21,19 +21,23 @@ class TestVersionedRecord extends DataObject implements TestOnly
         DataObjectPurgeable::class
     ];
 
-    public function AbsoluteLink(): string {
+    public function AbsoluteLink(): string
+    {
         return "https://example.com/testversionedrecord.html";
     }
 
-    public function SomeRelatedLink(): string {
+    public function SomeRelatedLink(): string
+    {
         return "https://example.com/testversionedrecord.html?alternateformat=1";
     }
 
-    public function SomeReadingModeLink(): string {
+    public function SomeReadingModeLink(): string
+    {
         return "https://example.com/testversionedrecord.html?stage=Stage&format=html";
     }
 
-    public function getPurgeUrlList(): array {
+    public function getPurgeUrlList(): array
+    {
         return [
             $this->AbsoluteLink(),
             $this->SomeRelatedLink(),
@@ -44,7 +48,8 @@ class TestVersionedRecord extends DataObject implements TestOnly
     /**
      * This record has a URL that is support
      */
-    public function getPurgeTypes() : array {
+    public function getPurgeTypes(): array
+    {
         return [
             CloudflarePurgeService::TYPE_URL
         ];

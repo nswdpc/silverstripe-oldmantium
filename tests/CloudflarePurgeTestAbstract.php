@@ -4,10 +4,8 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\DataObjectPurgeable;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
-use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use SilverStripe\Assets\File;
-use SilverStripe\Assets\Folder;
 use SilverStripe\Assets\Image;
 use SilverStripe\Assets\Dev\TestAssetStore;
 use SilverStripe\Core\Config\Config;
@@ -15,7 +13,6 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Versioned\Versioned;
-use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 /**
@@ -25,7 +22,6 @@ use Symbiote\QueuedJobs\Services\QueuedJobService;
  */
 abstract class CloudflarePurgeTestAbstract extends SapphireTest
 {
-
     protected $usesDatabase = true;
 
     protected $client;
@@ -54,7 +50,8 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
     ];
 
     #[\Override]
-    protected function setUp() : void {
+    protected function setUp(): void
+    {
         parent::setUp();
 
         // Mock a CloudflarePurgeService
@@ -74,7 +71,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
 
 
         // Create a new client for each test
-        $this->client = Injector::inst()->create( CloudflarePurgeService::class );
+        $this->client = Injector::inst()->create(CloudflarePurgeService::class);
 
         $this->assertTrue($this->client instanceof MockCloudflarePurgeService, "Client is not a MockCloudflarePurgeService");
 
@@ -82,7 +79,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
 
         $this->assertTrue($adapter instanceof MockApiClient, "Adapter is not a MockApiClient");
 
-        $this->assertTrue( MockCloudflarePurgeService::config()->get('enabled') );
+        $this->assertTrue(MockCloudflarePurgeService::config()->get('enabled'));
 
         QueuedJobService::config()->set('use_shutdown_function', false);
 
@@ -91,7 +88,8 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
     /**
      * Some tests require a test asset store
      */
-    protected function requireAssetStore($storeName) {
+    protected function requireAssetStore($storeName)
+    {
         // Set backend root to the StoreName
         TestAssetStore::activate($storeName);
         // Create a test files for each of the fixture references
@@ -110,7 +108,8 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
     /**
      * Called from tearDown in tests requiring asset store
      */
-    protected function resetAssetStore() {
+    protected function resetAssetStore()
+    {
         TestAssetStore::reset();
     }
 
@@ -125,9 +124,10 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
     /**
      * Check the request against what was provided
      */
-    protected function validatePurgeRequest(PurgeRecord $record, string $type) {
+    protected function validatePurgeRequest(PurgeRecord $record, string $type)
+    {
         $data = MockApiClient::getLastRequestData();
-        $values = $record->getPurgeTypeValues( $record->Type );
+        $values = $record->getPurgeTypeValues($record->Type);
         $this->assertEquals($values, $data['options']['json'][ $type ], "Purge type={$type} request values match record getPurgeTypeValues");
         $this->assertEquals("http://localhost/client/v4/zones/{$this->client->getZoneIdentifier()}/purge_cache", $data['url'], "URI mismatch");
 

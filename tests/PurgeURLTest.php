@@ -4,12 +4,9 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\DataObjectPurgeable;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
-use NSWDPC\Utilities\Cloudflare\Logger;
 use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\URLCachePurgeJob;
 use SilverStripe\Core\Injector\Injector;
-use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
-use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
@@ -19,8 +16,8 @@ require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
  */
 class PurgeURLTest extends CloudflarePurgeTestAbstract
 {
-
-    public function testPurgeRecordURL(): void {
+    public function testPurgeRecordURL(): void
+    {
 
         $urls = [
             'https://example.com',
@@ -36,7 +33,7 @@ class PurgeURLTest extends CloudflarePurgeTestAbstract
         $purge->publishSingle();
 
         // test that a job was created for this record
-        $descriptors = $purge->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
+        $descriptors = $purge->getCurrentPurgeJobDescriptors([ URLCachePurgeJob::class ]);
         $this->assertEquals(1, $descriptors->count(), "Jobs count should be 1");
 
         $descriptor = $descriptors->first();
@@ -45,11 +42,11 @@ class PurgeURLTest extends CloudflarePurgeTestAbstract
         $this->assertEquals(DataObjectPurgeable::REASON_PUBLISH, $job_data->reason);
 
         $job = Injector::inst()->createWithArgs(
-                $descriptor->Implementation,
-                [
-                    DataObjectPurgeable::REASON_PUBLISH,
-                    $purge
-                ]
+            $descriptor->Implementation,
+            [
+                DataObjectPurgeable::REASON_PUBLISH,
+                $purge
+            ]
         );
 
         $job->setup();
@@ -61,13 +58,13 @@ class PurgeURLTest extends CloudflarePurgeTestAbstract
         $purge->doUnpublish();
 
         // test that a job was created for this record reason = 'write'
-        $descriptors = $purge->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
+        $descriptors = $purge->getCurrentPurgeJobDescriptors([ URLCachePurgeJob::class ]);
 
         $this->assertEquals(0, $descriptors->count(), "Jobs count should be 0");
 
         $purge->delete();
 
-        $descriptors = $purge->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
+        $descriptors = $purge->getCurrentPurgeJobDescriptors([ URLCachePurgeJob::class ]);
         $this->assertEquals(0, $descriptors->count(), "Jobs count should be 0 after delete");
 
     }

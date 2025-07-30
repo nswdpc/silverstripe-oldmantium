@@ -10,7 +10,6 @@ use SilverStripe\Admin\ModelAdmin;
  */
 class CloudflareAdmin extends ModelAdmin
 {
-
     /**
      * @inheritdoc
      */

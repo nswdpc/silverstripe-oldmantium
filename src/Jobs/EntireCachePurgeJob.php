@@ -9,11 +9,11 @@ namespace NSWDPC\Utilities\Cloudflare;
  */
 class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
 {
-
     /**
      * @inheritdoc
      */
-    public function getPurgeType() : string {
+    public function getPurgeType(): string
+    {
         return CloudflarePurgeService::TYPE_ENTIRE;
     }
 
@@ -21,28 +21,30 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
      * @inheritdoc
      */
     #[\Override]
-    public function getTitle() {
+    public function getTitle()
+    {
         return _t(self::class . '.JOB_TITLE', 'CF Purge all in zone (WARNING!)');
     }
 
     /**
      * @inheritdoc
      */
-    public function process() {
+    public function process()
+    {
         $service = $this->getPurgeClient();
         $client = $service->getApiClient();
-        if(!$client) {
+        if (!$client) {
             throw new \Exception("API client not available. Is enabled=true?");
         }
 
         $zoneId = $service->getZoneIdentifier();
-        if(!$zoneId) {
+        if (!$zoneId) {
             throw new \Exception("No zone_id found in configuration");
         }
 
         $this->addMessage("Cloudflare: purging all from zone");
-        $response = $client->purgeEverything( $zoneId );
-        if($response->allSuccess()) {
+        $response = $client->purgeEverything($zoneId);
+        if ($response->allSuccess()) {
             $successes = $response->getSuccesses();
             $this->addMessage("Purged all in zone: " . json_encode($successes));
         } else {
@@ -58,6 +60,8 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
      * Do not do anything once this job is complete
      */
     #[\Override]
-    public function afterComplete() {}
+    public function afterComplete()
+    {
+    }
 
 }
