@@ -219,9 +219,11 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
         if ($type === CloudflarePurgeService::TYPE_URL) {
             if ($this->getOwner()->hasMethod('getPurgeUrlList')) {
                 // the record can specify its own list of URLs to purge
+                /* @phpstan-ignore method.notFound */
                 $values = $this->getOwner()->getPurgeUrlList();
             } elseif ($this->getOwner()->hasMethod('AbsoluteLink')) {
                 // otherwise use the URL of the record, provided by the record
+                /* @phpstan-ignore method.notFound */
                 $values[] = $this->getOwner()->AbsoluteLink();
             }
         }

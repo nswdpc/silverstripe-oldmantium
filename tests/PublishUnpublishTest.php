@@ -41,9 +41,11 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract
         $this->assertTrue(in_array($record->SomeRelatedLink(), $urls), "SomeRelatedLink not found in getPurgeUrlList");
 
         $record->write();
+        /* @phpstan-ignore method.notFound */
         $record->publishSingle();
 
         // test that a job was created for this record
+        /* @phpstan-ignore method.notFound */
         $descriptors = $record->getCurrentPurgeJobDescriptors([ URLCachePurgeJob::class ]);
         $this->assertEquals(1, $descriptors->count(), "Jobs count should be 1");
 
