@@ -4,7 +4,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Control\Director;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\ValidationException;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
