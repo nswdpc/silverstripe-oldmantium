@@ -4,7 +4,7 @@ Name: nswdpc-oldmantium
 NSWDPC\Utilities\Cloudflare\PurgeRecord:
   extensions:
     - 'NSWDPC\Utilities\Cloudflare\DataObjectPurgeable'
-    - 'Silverstripe\Versioned\Versioned'
+    - 'SilverStripe\Versioned\Versioned'
 SilverStripe\CMS\Model\SiteTree:
   extensions:
     - 'NSWDPC\Utilities\Cloudflare\SiteTreeExtension'
