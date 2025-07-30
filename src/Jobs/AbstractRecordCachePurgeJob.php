@@ -89,7 +89,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         }
 
         $type = $this->getPurgeType();
-        if ($type === '' || $type === '0') {
+        if ($type === '') {
             throw new \Exception("This job does not specify a purge type");
         }
 
