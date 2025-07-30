@@ -2,6 +2,7 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
+use NSWDPC\Utilities\Cloudflare\CloudflarePurgeable;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
@@ -81,8 +82,8 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     final protected function checkRecordForErrors() : array {
 
         $record = $this->getObject(self::RECORD_NAME);
-        if(!$record) {
-            throw new \Exception("Record not found");
+        if(!$record || !$record instanceof CloudflarePurgeable) {
+            throw new \Exception("Record not found or not CloudflarePurgeable");
         }
 
         $type = $this->getPurgeType();

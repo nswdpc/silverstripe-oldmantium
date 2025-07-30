@@ -385,12 +385,13 @@ class CloudflarePurgeService {
     final protected function purgeRecordWithAbsoluteLink(DataObject $record, array $extraHeaders = []): ?ApiResponse {
         $urls = [];
         $baseURL = self::config()->get('base_url');
-        if($baseURL) {
+        $url = '';
+        if($baseURL && $record->hasMethod('Link')) {
             $url = Controller::join_links($baseURL, $record->Link());
-        } else {
+        } else if($record->hasMethod('AbsoluteLink')) {
             $url = $record->AbsoluteLink();
         }
-        if(!$url) {
+        if($url === '') {
             // cannot purge if no value
             return null;
         }

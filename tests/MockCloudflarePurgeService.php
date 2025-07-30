@@ -13,7 +13,6 @@ class MockCloudflarePurgeService extends CloudflarePurgeService implements TestO
 
     /**
      * Retrieve the ApiClient
-     * @return ApiClient|null
      */
     public function createApiClient() : ApiClient {
         $client = new GuzzleHttpClient();

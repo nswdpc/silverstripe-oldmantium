@@ -13,11 +13,6 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
     /**
      * @inheritdoc
      */
-    public function __construct($params = null) {}
-
-    /**
-     * @inheritdoc
-     */
     public function getPurgeType() : string {
         return CloudflarePurgeService::TYPE_ENTIRE;
     }

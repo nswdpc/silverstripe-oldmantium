@@ -4,7 +4,7 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
-use Silverstripe\ORM\DataExtension;
+use SilverStripe\ORM\DataExtension;
 use SilverStripe\Versioned\Versioned;
 
 /**

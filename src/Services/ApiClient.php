@@ -107,9 +107,8 @@ class ApiClient {
             $body = [
                 $purgeType => $chunk
             ];
-            if($result = $this->callApi($zoneId, $body, $extraHeaders)) {
-                $response->addResult($result);
-            }
+            $result = $this->callApi($zoneId, $body, $extraHeaders);
+            $response->addResult($result);
         }
         return $response;
     }
@@ -135,9 +134,8 @@ class ApiClient {
             'purge_everything' => true
         ];
         $response = new ApiResponse();
-        if($result = $this->callApi($zoneId, $body)) {
-            $response->addResult($result);
-        }
+        $result = $this->callApi($zoneId, $body);
+        $response->addResult($result);
         return $response;
     }
 

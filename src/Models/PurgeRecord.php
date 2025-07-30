@@ -186,16 +186,14 @@ class PurgeRecord extends DataObject implements PermissionProvider {
         $values = $this->getPurgeTypeValues( $this->Type );
 
         if(count($values) == 0 && $this->requiresTypeValue()) {
-            throw new ValidationException(
+            throw ValidationException::create(
                 _t(__CLASS__ . '.PROVIDE_VALUES', 'Please provide one or more values')
             );
         }
 
         if($this->Type == CloudflarePurgeService::TYPE_URL) {
-            if(is_array($values)) {
-                foreach($values as $i => $value) {
-                    $values[$i] = Director::absoluteURL($value);
-                }
+            foreach($values as $i => $value) {
+                $values[$i] = Director::absoluteURL($value);
             }
             $this->TypeValues = $values;
         }
