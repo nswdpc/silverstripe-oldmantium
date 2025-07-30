@@ -5,7 +5,7 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use NSWDPC\Utilities\Cloudflare\Logger;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test reading mode removal from URLs
@@ -16,7 +16,7 @@ class ReadingModeTest extends CloudflarePurgeTestAbstract
 
     protected $usesDatabase = false;
 
-    public function testReadingMode() {
+    public function testReadingMode(): void {
 
         // URLs should have reading mode removed from query string
         $urls = [

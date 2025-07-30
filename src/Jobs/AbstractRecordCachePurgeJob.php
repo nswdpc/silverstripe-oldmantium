@@ -43,10 +43,12 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         if($reason) {
             $this->reason = $reason;
         }
-        if($object) {
+
+        if($object instanceof \SilverStripe\ORM\DataObject) {
             if( !$object->hasExtension( DataObjectPurgeable::class ) ) {
                 throw new \Exception("Record must have DataObjectPurgeable extension applied");
             }
+
             $this->setObject($object, self::RECORD_NAME);
         }
     }
@@ -54,6 +56,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     /**
      * Opportunity to add some logging here
      */
+    #[\Override]
     public function addMessage($msg, $level = null) {
         return parent::addMessage($msg, $level);
     }
@@ -69,9 +72,9 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         $object = $this->getObject(self::RECORD_NAME);
         if($object) {
             $type = $object->singular_name();
-            $title = "{$type}#{$object->ID}/{$object->Title}";
-            return $title;
+            return "{$type}#{$object->ID}/{$object->Title}";
         }
+
         return "";
     }
 
@@ -87,7 +90,7 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         }
 
         $type = $this->getPurgeType();
-        if(!$type) {
+        if($type === '' || $type === '0') {
             throw new \Exception("This job does not specify a purge type");
         }
 
@@ -95,10 +98,11 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
         // The record must have a set of values key by Type to purge (can be empty)
         if( isset($purgeValues[ $type ]) && is_array($purgeValues[ $type ]) ) {
 
-            if( count($purgeValues[ $type ]) > 0 ) {
+            if( $purgeValues[ $type ] !== [] ) {
                 foreach($purgeValues[$type] as $value) {
                     $this->addMessage("Will purge '{$value}' of type '{$type}'...");
                 }
+
                 return $purgeValues[$type];
             }
 
@@ -116,19 +120,18 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
     final protected function checkPurgeResult(?ApiResponse $response) {
         // Record errors
         $errors = $response->getErrors();
-        if(!empty($errors)) {
+        if($errors !== []) {
             foreach($errors as $error) {
                 $this->addMessage("Error: code={$error->code} message={$error->message}");
             }
+
             throw new \Exception("Response contained errors");
         }
 
         // Record successes
         $successes = $response->getSuccesses();
-        if(!empty($successes)) {
-            foreach($successes as $s => $file) {
-                $this->addMessage('Success: ' . $file);
-            }
+        foreach($successes as $file) {
+            $this->addMessage('Success: ' . $file);
         }
 
         $this->currentStep++;
@@ -147,11 +150,12 @@ abstract class AbstractRecordCachePurgeJob extends AbstractQueuedJob implements 
             $this->addMessage("Cloudflare: record in job no longer exists or could not be found");
             return;
         }
+
         if($record->CacheMaxAge && $record->CacheMaxAge > 0) {
             $next = new DateTime();
             $next->modify('+' . $record->CacheMaxAge . ' minutes');
             $next_formatted = $next->format('Y-m-d H:i:s');
-            $job = Injector::inst()->createWithArgs( get_class($this),  [ $this->reason, $record ] );
+            $job = Injector::inst()->createWithArgs( static::class,  [ $this->reason, $record ] );
             $this->addMessage("Cloudflare: requeuing job for {$next_formatted}");
             QueuedJobService::singleton()->queueJob($job, $next_formatted);
         } else {

@@ -8,10 +8,6 @@ class ApiResponse {
 
     protected $results = [];
 
-    public function __construct() {
-        $this->results = [];
-    }
-
     /**
      * Add an API result to this response
      */
@@ -31,21 +27,17 @@ class ApiResponse {
     public function allSuccess() : bool {
         $result = array_filter(
             $this->results,
-            function($r) {
-                return $r->isSuccess();
-            }
+            fn($r) => $r->isSuccess()
         );
-        return count($result) == count($this->results);
+        return count($result) === count($this->results);
     }
 
     public function hasErrors() : bool {
         $result = array_filter(
             $this->results,
-            function($r) {
-                return count($r->getErrors()) > 0;
-            }
+            fn($r): bool => count($r->getErrors()) > 0
         );
-        return count($result) > 0;
+        return $result !== [];
     }
 
     public function getErrors() : array {
@@ -53,6 +45,7 @@ class ApiResponse {
         foreach($this->results as $result) {
             $errors = array_merge($errors, $result->getErrors());
         }
+
         return $errors;
     }
 
@@ -63,6 +56,7 @@ class ApiResponse {
                 $successes[] = $id;
             }
         }
+
         return $successes;
     }
 
@@ -76,6 +70,7 @@ class ApiResponse {
                 $exceptions[] = $exception;
             }
         }
+
         return $exceptions;
     }
 
@@ -94,31 +89,34 @@ class ApiResponse {
                 $exceptionHeader = [];
                 array_walk(
                     $exceptions,
-                    function($exception, $key) use (&$exceptionHeader) {
-                        $exceptionHeader[] = "(" . $exception->getCode() . ") " . get_class($exception);
+                    function($exception, $key) use (&$exceptionHeader): void {
+                        $exceptionHeader[] = "(" . $exception->getCode() . ") " . $exception::class;
                     }
                 );
                 $results['exception'] = $this->sanitiseResultValue(implode(", ", $exceptionHeader));
             }
+
             if($successes != []) {
                 // has some success, the values are the ids from the response
                 $results['success'] = $this->sanitiseResultValue(implode(", ", $successes));
             }
+
             if($errors != []) {
                 // has some error
                 $errorHeader = [];
                 array_walk(
                     $errors,
-                    function($error, $key) use (&$errorHeader) {
-                        $code = isset($error->code) ? $error->code : "?";
-                        $message = isset($error->message) ? $error->message : "?";
+                    function($error, $key) use (&$errorHeader): void {
+                        $code = $error->code ?? "?";
+                        $message = $error->message ?? "?";
                         $errorHeader[] = "({$code}) {$message}";
                     }
                 );
                 $results['error'] = $this->sanitiseResultValue(implode(", ", $errorHeader));
             }
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
         }
+
         return $results;
     }
 

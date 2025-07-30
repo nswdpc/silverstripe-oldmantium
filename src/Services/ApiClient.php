@@ -12,28 +12,16 @@ class ApiClient {
     public const HEADER_PURGE_REASON = 'X-Purge-Reason';
 
     /**
-     * @var string
-     */
-    protected $apiToken = '';
-
-    /**
-     * @var ClientInterface
-     */
-    protected $client;
-
-    /**
      * @var int
      */
     const CHUNK_SIZE = 30;
 
-    public function __construct(ClientInterface $client, string $apiToken) {
-        $this->apiToken = $apiToken;
-        $this->client = $client;
+    public function __construct(protected \GuzzleHttp\ClientInterface $client, protected string $apiToken)
+    {
     }
 
     protected function getApiUrl(string $zoneId) : string {
-        $url = "https://api.cloudflare.com/client/v4/zones/{$zoneId}/purge_cache";
-        return $url;
+        return "https://api.cloudflare.com/client/v4/zones/{$zoneId}/purge_cache";
     }
 
     protected function getHeaders(array $extraHeaders = []) : array {
@@ -41,12 +29,13 @@ class ApiClient {
             "Authorization" => "Bearer {$this->apiToken}",
             "Content-Type" => "application/json"
         ];
-        if(count($extraHeaders) > 0) {
+        if($extraHeaders !== []) {
             $headers = array_merge(
                 $extraHeaders,
                 $headers
             );
         }
+
         return $headers;
     }
 
@@ -54,11 +43,9 @@ class ApiClient {
      * Get options for request.
      * See https://docs.guzzlephp.org/en/latest/request-options.html#json for json key usage
      */
-    protected function getOptions(array $headers, array $body) : array {
-        $options = [];
-        $options['headers'] = $headers;
-        $options['json'] = $body;
-        return $options;
+    protected function getOptions(array $headers, array $body): array
+    {
+        return ['headers' => $headers, 'json' => $body];
     }
 
     protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ApiResult {
@@ -80,11 +67,12 @@ class ApiClient {
             Logger::log("Cloudflare API client request error. " . $requestException->getMessage(), "NOTICE");
             try {
                 $decoded = null;
-                if($response = $requestException->getResponse()) {
+                if(($response = $requestException->getResponse()) instanceof \Psr\Http\Message\ResponseInterface) {
                     $result = $response->getBody()->getContents();
                     $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception) {}
+
             // store the result
             $result = new ApiResult($decoded);
             $result->setException($requestException);
@@ -94,6 +82,7 @@ class ApiClient {
             $result = new ApiResult();
             $result->setException($exception);
         }
+
         return $result;
     }
 
@@ -110,6 +99,7 @@ class ApiClient {
             $result = $this->callApi($zoneId, $body, $extraHeaders);
             $response->addResult($result);
         }
+
         return $response;
     }
 

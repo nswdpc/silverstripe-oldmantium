@@ -11,7 +11,7 @@ use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test purge cache everything
@@ -20,7 +20,7 @@ require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
 class PurgeEverythingTest extends CloudflarePurgeTestAbstract
 {
 
-    public function testPurgeAll() {
+    public function testPurgeAll(): void {
 
         // request to purge all
         $result = $this->client->purgeAll();

@@ -10,6 +10,7 @@ use SilverStripe\Versioned\Versioned;
 /**
  * SiteTree purge handling
  * @author James
+ * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\CMS\Model\SiteTree & static)>
  */
 class SiteTreeExtension extends DataExtension {
 
@@ -21,7 +22,7 @@ class SiteTreeExtension extends DataExtension {
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
             return;
         }
-        $result = Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-publish']);
+        Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-publish']);
     }
 
     /**
@@ -33,7 +34,7 @@ class SiteTreeExtension extends DataExtension {
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
             return;
         }
-        $result = Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-publishrecursive']);
+        Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-publishrecursive']);
     }
 
     /**
@@ -46,6 +47,6 @@ class SiteTreeExtension extends DataExtension {
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
             return;
         }
-        $result = Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-unpublish']);
+        Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-unpublish']);
     }
 }

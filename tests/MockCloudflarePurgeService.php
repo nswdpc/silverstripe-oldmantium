@@ -14,6 +14,7 @@ class MockCloudflarePurgeService extends CloudflarePurgeService implements TestO
     /**
      * Retrieve the ApiClient
      */
+    #[\Override]
     public function createApiClient() : ApiClient {
         $client = new GuzzleHttpClient();
         $token = self::config()->get('auth_token');
@@ -24,10 +25,9 @@ class MockCloudflarePurgeService extends CloudflarePurgeService implements TestO
 
     /**
      * Return the absolute path to the test public resources dir
-     * @return string
      */
     protected function getPublicResourcesDir() : string {
-        return dirname(__FILE__) . "/public/_resources/";
+        return __DIR__ . "/public/_resources/";
     }
 
 }

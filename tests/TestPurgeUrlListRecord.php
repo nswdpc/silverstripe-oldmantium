@@ -10,25 +10,25 @@ use SilverStripe\Versioned\Versioned;
 
 class TestPurgeUrlListRecord extends DataObject implements TestOnly
 {
-    private static $db = [
+    private static array $db = [
         'Title' => 'Varchar(255)'
     ];
 
-    private static $table_name = "TestPurgeUrlListRecord";
+    private static string $table_name = "TestPurgeUrlListRecord";
 
-    public function AbsoluteLink() {
+    public function AbsoluteLink(): string {
         return "https://example.com/TestPurgeUrlListRecord.html";
     }
 
-    public function SomeRelatedLink() {
+    public function SomeRelatedLink(): string {
         return "https://example.com/TestPurgeUrlListRecord.html?alternateformat=1";
     }
 
-    public function SomeReadingModeLink() {
+    public function SomeReadingModeLink(): string {
         return "https://example.com/TestPurgeUrlListRecord.html?stage=Stage&format=html";
     }
 
-    public function getPurgeUrlList() {
+    public function getPurgeUrlList(): array {
         return [
             $this->AbsoluteLink(),
             $this->SomeRelatedLink(),

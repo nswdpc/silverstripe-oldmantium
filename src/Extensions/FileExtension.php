@@ -12,8 +12,8 @@ use SilverStripe\Versioned\Versioned;
  * As files can have different URLs depending on their stage, this hooks into
  * onAfterWrite() on onBeforeDelete()
  * @author James
+ * @extends \SilverStripe\ORM\DataExtension<(\SilverStripe\Assets\File & static)>
  */
-
 class FileExtension extends DataExtension {
 
     /**
@@ -26,7 +26,7 @@ class FileExtension extends DataExtension {
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
             return;
         }
-        $result = Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-write']);
+        Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'after-write']);
     }
 
     /**
@@ -41,6 +41,6 @@ class FileExtension extends DataExtension {
         if (!Config::inst()->get(CloudflarePurgeService::class, 'enabled') ) {
             return;
         }
-        $result = Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-delete']);
+        Injector::inst()->get(CloudflarePurgeService::class)->purgeRecord($this->getOwner(), [ApiClient::HEADER_PURGE_REASON => 'before-delete']);
     }
 }

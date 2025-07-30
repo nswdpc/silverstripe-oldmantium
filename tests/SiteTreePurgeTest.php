@@ -13,7 +13,7 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Versioned\Versioned;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test purge SiteTree objects
@@ -26,28 +26,31 @@ class SiteTreePurgeTest extends CloudflarePurgeTestAbstract
 
     protected static $fixture_file = "./SiteTreeFixture.yml";
 
+    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
     }
 
-    public function testPurgeOnPublishSingle() {
+    public function testPurgeOnPublishSingle(): void {
         $sitetree = $this->objFromFixture(SiteTree::class, 'page-1');
         $sitetree->publishSingle();
+
         $data = MockApiClient::getLastRequestData();
         $this->assertEquals('after-publish', $data['options']['headers'][ApiClient::HEADER_PURGE_REASON]);
         $this->assertEquals($sitetree->AbsoluteLink(), $data['options']['json']['files'][0]);
     }
 
-    public function testPurgeOnPublishRecursive() {
+    public function testPurgeOnPublishRecursive(): void {
         $sitetree = $this->objFromFixture(SiteTree::class, 'page-1');
         $sitetree->publishRecursive();
+
         $data = MockApiClient::getLastRequestData();
         $this->assertEquals('after-publishrecursive', $data['options']['headers'][ApiClient::HEADER_PURGE_REASON]);
         $this->assertEquals($sitetree->AbsoluteLink(), $data['options']['json']['files'][0]);
     }
 
-    public function testPurgeOnUnpublish() {
+    public function testPurgeOnUnpublish(): void {
         $sitetree = $this->objFromFixture(SiteTree::class, 'page-1');
         $sitetree->publishSingle();// need to have a published version in order to unpublish
         // grab the link while the file is still published

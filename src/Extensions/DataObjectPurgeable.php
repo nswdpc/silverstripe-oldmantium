@@ -18,8 +18,10 @@ use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 /**
  * Extension that decorates a purgeable dataobject, currently support URLs only
  * @author James
+ * @property ?string $CachePurgeAt
+ * @property float $CacheMaxAge
+ * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Utilities\Cloudflare\PurgeRecord & static)>
  */
-
 class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
     /**
@@ -42,10 +44,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      */
     const REASON_UNPUBLISH = 'unpublish';
 
-    /**
-     * @var array
-     */
-    private static $db = [
+    private static array $db = [
         'CachePurgeAt' => 'Datetime', // add ability to purge dataobject at a certain date / time
         'CacheMaxAge' => 'Double'// minutes TTL
     ];
@@ -55,7 +54,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      */
     public function onBeforeWrite()
     {
-        if($this->owner->exists()) {
+        if($this->getOwner()->exists()) {
             $this->clearCurrentJobs();
         }
     }
@@ -65,7 +64,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      */
     public function onBeforeDelete()
     {
-        if($this->owner->exists()) {
+        if($this->getOwner()->exists()) {
             $this->clearCurrentJobs();
         }
     }
@@ -76,12 +75,13 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      */
     public function onAfterPublish()
     {
-        if ($this->owner->hasExtension(Versioned::class)) {
+        if ($this->getOwner()->hasExtension(Versioned::class)) {
             // Logger::log("Cloudflare: creating jobs for reason=publish");
             $start = null;
-            if($this->owner->CachePurgeAt) {
-                $start = new \DateTime( $this->owner->CachePurgeAt );
+            if($this->getOwner()->CachePurgeAt) {
+                $start = new \DateTime( $this->getOwner()->CachePurgeAt );
             }
+
             $this->createPurgeJobs('publish', $start);
         }
     }
@@ -92,12 +92,13 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      */
     public function onAfterPublishRecursive()
     {
-        if ($this->owner->hasExtension(Versioned::class)) {
+        if ($this->getOwner()->hasExtension(Versioned::class)) {
             // Logger::log("Cloudflare: creating jobs for reason=publishrecursive");
             $start = null;
-            if($this->owner->CachePurgeAt) {
-                $start = new \DateTime( $this->owner->CachePurgeAt );
+            if($this->getOwner()->CachePurgeAt) {
+                $start = new \DateTime( $this->getOwner()->CachePurgeAt );
             }
+
             $this->createPurgeJobs('publish', $start);
         }
     }
@@ -108,15 +109,16 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      */
     public function onAfterUnpublish()
     {
-        if ($this->owner->hasExtension(Versioned::class)) {
-            if($this->owner->clearPurgeJobsOnUnPublish()) {
+        if ($this->getOwner()->hasExtension(Versioned::class)) {
+            if($this->getOwner()->clearPurgeJobsOnUnPublish()) {
                 $this->clearCurrentJobs();
             } else {
                 // Logger::log("Cloudflare: creating jobs for reason=unpublish");
                 $start = null;
-                if($this->owner->CachePurgeAt) {
-                    $start = new \DateTime( $this->owner->CachePurgeAt );
+                if($this->getOwner()->CachePurgeAt) {
+                    $start = new \DateTime( $this->getOwner()->CachePurgeAt );
                 }
+
                 $this->createPurgeJobs('unpublish');
             }
         }
@@ -135,15 +137,15 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             'Root.Cloudflare', [
                 DatetimeField::create(
                     'CachePurgeAt',
-                    _t(__CLASS__ . '.CACHE_PURGE_AT', 'Set purge to occur from this date and time (Timezone: UTC)')
+                    _t(self::class . '.CACHE_PURGE_AT', 'Set purge to occur from this date and time (Timezone: UTC)')
                 ),
                 NumericField::create(
                     'CacheMaxAge',
-                    _t(__CLASS__ . '.CACHE_MAX_AGE', 'Cache maximum age (minutes)')
+                    _t(self::class . '.CACHE_MAX_AGE', 'Cache maximum age (minutes)')
                 )->setDescription(
-                    _t(__CLASS__ . '.CACHE_MAX_AGE_DESCRIPTION', 'Record URL(s) will be purged at this interval in minutes')
+                    _t(self::class . '.CACHE_MAX_AGE_DESCRIPTION', 'Record URL(s) will be purged at this interval in minutes')
                 )->setRightTitle(
-                    _t(__CLASS__ . '.CACHE_MAX_AGE_LEAVE_ZERO', 'Leave empty for no regular purge')
+                    _t(self::class . '.CACHE_MAX_AGE_LEAVE_ZERO', 'Leave empty for no regular purge')
                 )->setHTML5(true)
             ]
         );
@@ -152,7 +154,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
     /**
      * Only the record knows which types to return, but return URL type here as the default
      * Owner records will take precedence
-     * @return array
      */
     public function getPurgeTypes() : array {
         return [
@@ -169,7 +170,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
     /**
      * Return an array of values that can be purged
-     * @return array
      */
     final public function getPurgeValues() : array {
 
@@ -179,7 +179,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         // mapping internal TYPE_* contants to purge_cache options
         $mappings = CloudflarePurgeService::getTypeMappings();
         // the types this record supports (could be only one !)
-        $types = $this->owner->getPurgeTypes();
+        $types = $this->getOwner()->getPurgeTypes();
         if(empty($types)) {
             // no purge types means no values
             return [];
@@ -195,7 +195,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                  * e.g $result[ 'Tag' ] => ['blog','support','security'] ]
                  * result is keyed by the allowed purge_cache options
                  */
-                $result[ $type ] = $this->owner->getPurgeTypeValues( $type );
+                $result[ $type ] = $this->getOwner()->getPurgeTypeValues( $type );
                 // Logger::log("Cloudflare: getPurgeValues returning " .  count($result[ $type ]) . " records for type {$type}");
             }
         }
@@ -207,21 +207,19 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      * Support owner records that only purge their URLs
      * The owner record can implement a method of this name (see PurgeRecord for example)
      * to return specific purge values
-     * @return array
      */
     public function getPurgeTypeValues($type) : array {
         $values = [];
-        switch($type) {
-            case CloudflarePurgeService::TYPE_URL:
-                if ($this->owner->hasMethod('getPurgeUrlList')) {
-                    // the record can specify its own list of URLs to purge
-                    $values = $this->owner->getPurgeUrlList();
-                } elseif ($this->owner->hasMethod('AbsoluteLink')) {
-                    // otherwise use the URL of the record, provided by the record
-                    $values[] = $this->owner->AbsoluteLink();
-                }
-                break;
+        if ($type === CloudflarePurgeService::TYPE_URL) {
+            if ($this->getOwner()->hasMethod('getPurgeUrlList')) {
+                // the record can specify its own list of URLs to purge
+                $values = $this->getOwner()->getPurgeUrlList();
+            } elseif ($this->getOwner()->hasMethod('AbsoluteLink')) {
+                // otherwise use the URL of the record, provided by the record
+                $values[] = $this->getOwner()->AbsoluteLink();
+            }
         }
+
         return $values;
     }
 
@@ -244,7 +242,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         ];
 
         // jobs with this implementation
-        if(empty($implementations)) {
+        if($implementations === []) {
             $implementations = ClassInfo::subclassesFor( AbstractRecordCachePurgeJob::class, false);
         }
 
@@ -269,12 +267,13 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
             $data = @unserialize($job->SavedJobData);
             if(!empty($data->{$record_id})
                 && !empty($data->{$record_type})
-                && $data->{$record_id} == $this->owner->ID
-                && $data->{$record_type} == get_class($this->owner)) {
+                && $data->{$record_id} == $this->getOwner()->ID
+                && $data->{$record_type} == $this->getOwner()::class) {
                 // matching job, push onto list
                 $list->push($job);
             }
         }
+
         return $list;
     }
 
@@ -283,7 +282,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
      * @param string $type being one of the CloudflarePurgeService::TYPE_ constant values
      * @return string|false
      */
-    public static function getJobClassForType($type) {
+    public static function getJobClassForType($type): string|false {
         $class = "NSWDPC\\Utilities\\Cloudflare\\{$type}CachePurgeJob";
         if(class_exists($class)) {
             return $class;
@@ -301,26 +300,29 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
         // get all possible values this record may have, keys define jobs
         $values  = $this->getPurgeValues();
         // no values means no jobs
-        if(empty($values)) {
+        if($values === []) {
             return [];
         }
-        foreach($values as $type => $spec) {
+
+        foreach(array_keys($values) as $type) {
             $class = self::getJobClassForType($type);
             if($class && class_exists($class)) {
                 $job = Injector::inst()->createWithArgs(
                         $class,
                         [
                             $reason, // reason for job creation
-                            $this->owner // this record
+                            $this->getOwner() // this record
                         ]
                 );
                 if(!$job instanceof AbstractRecordCachePurgeJob) {
                     // Logger::log("Cloudflare: getPurgeJobs ignoring job as it is not an AbstractRecordCachePurgeJob");
                     continue;
                 }
+
                 $jobs[] = $job;
             }
         }
+
         return $jobs;
     }
 
@@ -337,7 +339,8 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                 Logger::log("Cloudflare: createPurgeJobs called but not enabled in configuration","NOTICE");
                 return false;
             }
-            if(!$start) {
+
+            if(!$start instanceof \DateTime) {
                 $start = new \DateTime(); // run job 'now'
             }
 
@@ -346,15 +349,17 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
 
             // get all possible jobs for this record
             $jobs = $this->getPurgeJobs($reason);
-            if(empty($jobs)) {
+            if($jobs === []) {
                 Logger::log("Cloudflare: createPurgeJobs there are no jobs available for reason={$reason}","NOTICE");
                 return false;
             }
+
             foreach($jobs as $job) {
                 if(!$job instanceof AbstractRecordCachePurgeJob) {
                     // Logger::log("Cloudflare: createPurgeJobs job " .  get_class($job) . " is not an instance of AbstractRecordCachePurgeJob");
                     continue;
                 }
+
                 if($job_id = QueuedJobService::singleton()
                                 ->queueJob(
                                     $job,
@@ -369,9 +374,10 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable {
                 }
             }
 
-        } catch (\Exception $e) {
-            Logger::log("Cloudflare: createPurgeJobs reason={$reason} failed with error={$e->getMessage()}", "WARNING");
+        } catch (\Exception $exception) {
+            Logger::log("Cloudflare: createPurgeJobs reason={$reason} failed with error={$exception->getMessage()}", "WARNING");
         }
+
         return $jobs_queued;
     }
 

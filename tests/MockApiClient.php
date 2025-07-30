@@ -16,12 +16,12 @@ class MockApiClient extends ApiClient {
 
     protected $mockError = false;
 
+    #[\Override]
     protected function getApiUrl(string $zoneId) : string {
-        $url = "http://localhost/client/v4/zones/{$zoneId}/purge_cache";
-        return $url;
+        return "http://localhost/client/v4/zones/{$zoneId}/purge_cache";
     }
 
-    public function setIsMockError(bool $is) {
+    public function setIsMockError(bool $is): static {
         $this->mockError = $is;
         return $this;
     }
@@ -32,6 +32,7 @@ class MockApiClient extends ApiClient {
         Logger::log("Calling API url='{$apiUrl}' body='{$body}' reason='{$reason}'", "INFO");
     }
 
+    #[\Override]
     protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ApiResult {
         $headers = $this->getHeaders($extraHeaders);
         $result = $this->mockError ? $this->errorContents() : $this->successContents();
@@ -66,11 +67,11 @@ class MockApiClient extends ApiClient {
 
     public static function getLastRequestData(): ?array {
         $last = array_key_last(static::getRequestHistory());
-        return !is_null($last) ? static::getRequestDataIndex($last) : null;
+        return is_null($last) ? null : static::getRequestDataIndex($last);
     }
 
     protected function errorContents() : string {
-        $response = <<<JSON
+        return <<<JSON
 {
   "errors": [
     {
@@ -83,11 +84,10 @@ class MockApiClient extends ApiClient {
   "success": false
 }
 JSON;
-        return $response;
     }
 
     protected function successContents() : string {
-        $response = <<<JSON
+        return <<<JSON
 {
   "errors": [],
   "messages": [],
@@ -97,7 +97,6 @@ JSON;
   "success": true
 }
 JSON;
-        return $response;
     }
 
 }

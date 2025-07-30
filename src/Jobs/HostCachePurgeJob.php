@@ -22,8 +22,9 @@ class HostCachePurgeJob extends AbstractRecordCachePurgeJob
     /**
      * @inheritdoc
      */
-    public function getTitle() {
-        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'CF purge host(s)');
+    #[\Override]
+    public function getTitle(): string {
+        return parent::getTitle() . " - " . _t(self::class . '.JOB_TITLE', 'CF purge host(s)');
     }
 
     /**

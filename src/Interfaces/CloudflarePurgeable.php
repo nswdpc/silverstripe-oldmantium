@@ -8,7 +8,10 @@ namespace NSWDPC\Utilities\Cloudflare;
  */
 interface CloudflarePurgeable {
     public function getPurgeValues() : array;
+
     public function getPurgeTypes() : array;
+
     public function getPurgeRecordName() : string;
+
     public function getPurgeTypeValues($type) : array;
 }

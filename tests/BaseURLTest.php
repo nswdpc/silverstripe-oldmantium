@@ -5,7 +5,7 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
 use SilverStripe\Core\Config\Config;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test base_url configuration
@@ -16,7 +16,7 @@ class BaseURLTest extends CloudflarePurgeTestAbstract
 
     protected $usesDatabase = false;
 
-    public function testBaseURL() {
+    public function testBaseURL(): void {
 
         $scheme = "https";
         $host = "alt.example.com";

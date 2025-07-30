@@ -32,33 +32,23 @@ class CloudflarePurgeService {
      * @var int
      * Delay purge all by this many hours (allows undo)
      */
-    private static $purge_all_delay = 1;
+    private static int $purge_all_delay = 1;
 
     /**
-     * @var boolean
      * @config
      */
-    private static $enabled = false;
+    private static bool $enabled = false;
 
-    /**
-     * @var string
-     */
-    private static $api_token = '';
+    private static string $api_token = '';
 
-    /**
-     * @var string
-     */
-    private static $zone_id = '';
+    private static string $zone_id = '';
 
-    /**
-     * @var string
-     */
-    private static $base_url = '';
+    private static string $base_url = '';
 
     /**
      * @var ApiClient
      */
-    protected $client = null;
+    protected $client;
 
     /**
      * @var string
@@ -94,13 +84,6 @@ class CloudflarePurgeService {
     private static bool $emit_headers_in_modeladmin = true;
 
     /**
-     * @inheritdoc
-     */
-    public function __construct()
-    {
-    }
-
-    /**
      * Remove reading mode from URLs
      * @param array $urls each value is a string URL that can be parsed by parse_url()
      * @return void
@@ -108,7 +91,7 @@ class CloudflarePurgeService {
     public static function removeReadingMode( array &$urls ) {
         array_walk(
             $urls,
-            function(&$value, $key) {
+            function(&$value, $key): void {
 
                 $parts = parse_url($value);
 
@@ -128,16 +111,20 @@ class CloudflarePurgeService {
                 if(isset($parts['scheme'])) {
                     $url .= $parts['scheme'] . "://";
                 }
+
                 if(isset($parts['host'])) {
                     $url .= $parts['host'];
                 }
+
                 if(isset($parts['port'])) {
                     $url .= ":" . $parts['port'];
                 }
+
                 if(isset($parts['path'])) {
                     $url .= $parts['path'];
                 }
-                if(count($query) > 0) {
+
+                if($query !== []) {
                     $url .= "?" . http_build_query($query);
                 }
 
@@ -148,15 +135,16 @@ class CloudflarePurgeService {
 
     /**
      * Retrieve the ApiClient
-     * @return ApiClient|null
      */
     public function getApiClient() : ?ApiClient {
         if(!self::config()->get('enabled')) {
             return null;
         }
+
         if($this->client) {
             return $this->client;
         }
+
         $this->client = $this->createApiClient();
         return $this->client;
     }
@@ -188,7 +176,7 @@ class CloudflarePurgeService {
         // ensure URLs are absolute
         array_walk(
             $urls,
-            function(&$value, $key) {
+            function(&$value, $key): void {
                 $value = Director::absoluteURL($value);
             }
         );
@@ -207,13 +195,14 @@ class CloudflarePurgeService {
             return $urls;
         }
 
-        $scheme = parse_url($baseURL, PHP_URL_SCHEME);
-        $host = parse_url($baseURL, PHP_URL_HOST);
+        $scheme = parse_url((string) $baseURL, PHP_URL_SCHEME);
+        $host = parse_url((string) $baseURL, PHP_URL_HOST);
 
-        if(!$scheme) {
+        if($scheme === 0 || ($scheme === '' || $scheme === '0') || $scheme === [] || $scheme === false || $scheme === null) {
             throw new \Exception("base_url needs to have a scheme");
         }
-        if(!$host) {
+
+        if($host === 0 || ($host === '' || $host === '0') || $host === [] || $host === false || $host === null) {
             throw new \Exception("base_url needs to have a host");
         }
 
@@ -222,9 +211,9 @@ class CloudflarePurgeService {
         foreach($urls as $url) {
 
             // gather parts from URL provide
-            $path = parse_url($url, PHP_URL_PATH);
-            $port = parse_url($url, PHP_URL_PORT);
-            $query = parse_url($url, PHP_URL_QUERY);
+            $path = parse_url((string) $url, PHP_URL_PATH);
+            $port = parse_url((string) $url, PHP_URL_PORT);
+            $query = parse_url((string) $url, PHP_URL_QUERY);
 
             // use base URL parts for these components
             $newUrl = $scheme . "://";
@@ -232,9 +221,11 @@ class CloudflarePurgeService {
             if($port) {
                 $newUrl .= ":" . $port;
             }
+
             if($path) {
                 $newUrl .= $path;
             }
+
             if($query) {
                 $newUrl .= "?" . $query;
             }
@@ -258,12 +249,14 @@ class CloudflarePurgeService {
         if(!Permission::checkMember($member, 'ADMIN')) {
             return false;
         }
+
         $job = new EntireCachePurgeJob();
         $start = new \DateTime();
         $delay = $this->config()->get('purge_all_delay');
         if($delay > 0) {
             $start->modify("+{$delay} hours");
         }
+
         $result = false;
         // Logger::log("Cloudflare: purging all (via job)");
         if($job_id = QueuedJobService::singleton()->queueJob(
@@ -273,6 +266,7 @@ class CloudflarePurgeService {
             $descriptor = QueuedJobDescriptor::get()->byId($job_id);
             $result = $descriptor && $descriptor->exists();
         }
+
         return $result;
     }
 
@@ -282,15 +276,15 @@ class CloudflarePurgeService {
      */
     public function purgeTags(array $tags, array $extraHeaders = []) : ?ApiResponse {
         try {
-            if(empty($tags)) {
+            if($tags === []) {
                 return null;
             }
+
             $client = $this->getApiClient();
-            if(!$client) {
+            if(!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
-            $response = $client->purgeTags($this->getZoneIdentifier(), $tags, $extraHeaders);
-            return $response;
+            return $client->purgeTags($this->getZoneIdentifier(), $tags, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge tags " . implode(",", $tags) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
@@ -302,15 +296,15 @@ class CloudflarePurgeService {
      */
     public function purgeHosts(array $hosts, array $extraHeaders = []) : ?ApiResponse {
         try {
-            if(empty($hosts)) {
+            if($hosts === []) {
                 return null;
             }
+
             $client = $this->getApiClient();
-            if(!$client) {
+            if(!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
-            $response = $client->purgeHosts($this->getZoneIdentifier(), $hosts, $extraHeaders);
-            return $response;
+            return $client->purgeHosts($this->getZoneIdentifier(), $hosts, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge hosts " . implode(",", $hosts) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
@@ -323,16 +317,17 @@ class CloudflarePurgeService {
      */
     public function purgeURLs(array $urls, array $extraHeaders = []) : ?ApiResponse {
         try {
-            if(empty($urls)) {
+            if($urls === []) {
                 return null;
             }
+
             $client = $this->getApiClient();
-            if(!$client) {
+            if(!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
+
             $urls = $this->prepUrls($urls);
-            $response = $client->purgeUrls($this->getZoneIdentifier(), $urls, $extraHeaders);
-            return $response;
+            return $client->purgeUrls($this->getZoneIdentifier(), $urls, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge URLs " . implode(",", $urls) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
@@ -342,17 +337,17 @@ class CloudflarePurgeService {
     /**
      * Purge by prefix
      */
-    public function purgePrefixes(array $prefixes, array $extraHeaders = []) {
+    public function purgePrefixes(array $prefixes, array $extraHeaders = []): ?\NSWDPC\Utilities\Cloudflare\ApiResponse {
         try {
-            if(empty($prefixes)) {
+            if($prefixes === []) {
                 return null;
             }
+
             $client = $this->getApiClient();
-            if(!$client) {
+            if(!$client instanceof \NSWDPC\Utilities\Cloudflare\ApiClient) {
                 return null;
             }
-            $response = $client->purgePrefixes($this->getZoneIdentifier(), $prefixes, $extraHeaders);
-            return $response;
+            return $client->purgePrefixes($this->getZoneIdentifier(), $prefixes, $extraHeaders);
         } catch (\Exception $exception) {
             Logger::log("Failed to purge prefixes " . implode(",", $prefixes) . " with error: " . $exception->getMessage(), "NOTICE");
             return null;
@@ -368,9 +363,8 @@ class CloudflarePurgeService {
 
     /**
      * Map types to the options that can be provided to purge_cache API method called by cachePurge
-     * @return array
      */
-    public static function getTypeMappings() {
+    public static function getTypeMappings(): array {
         return [
             self::TYPE_HOST => 'hosts',
             self::TYPE_TAG => 'tags',
@@ -386,15 +380,17 @@ class CloudflarePurgeService {
         $urls = [];
         $baseURL = self::config()->get('base_url');
         $url = '';
-        if($baseURL && $record->hasMethod('Link')) {
+        if ($baseURL && $record->hasMethod('Link')) {
             $url = Controller::join_links($baseURL, $record->Link());
-        } else if($record->hasMethod('AbsoluteLink')) {
+        } elseif ($record->hasMethod('AbsoluteLink')) {
             $url = $record->AbsoluteLink();
         }
+
         if($url === '') {
             // cannot purge if no value
             return null;
         }
+
         $urls[] = $url;
         return $this->purgeURLs($urls, $extraHeaders);
     }
@@ -419,7 +415,7 @@ class CloudflarePurgeService {
      */
     public function purgeRecord(object $object, array $extraHeaders = []) : ?ApiResponse {
         try {
-            if(method_exists($object, 'getPurgeUrlList') || (method_exists($object, 'hasMethod') && $object->hasMethod('getPurgeUrlList'))) {
+            if (method_exists($object, 'getPurgeUrlList') || (method_exists($object, 'hasMethod') && $object->hasMethod('getPurgeUrlList'))) {
                 // custom record handling - allows purge of multiple URLs linked to an object
                 $urls = $object->getPurgeUrlList();
                 if(!is_array($urls)) {
@@ -427,9 +423,9 @@ class CloudflarePurgeService {
                 } else {
                     return $this->logResultOf($this->purgeURLs($urls, $extraHeaders));
                 }
-            } else if($object instanceof SiteTree) {
+            } elseif ($object instanceof SiteTree) {
                 return $this->logResultOf($this->purgePage($object, $extraHeaders));
-            } else if($object instanceof File) {
+            } elseif ($object instanceof File) {
                 return $this->logResultOf($this->purgeFile($object, $extraHeaders));
             } else {
                 throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
@@ -439,6 +435,7 @@ class CloudflarePurgeService {
         } catch (\Exception $exception) {
             Logger::log("purgeRecord general exception: " . $exception->getMessage(), "NOTICE");
         }
+
         return null;
     }
 
@@ -446,12 +443,12 @@ class CloudflarePurgeService {
      * Proxy the ApiResponse, log the result, and return it
      */
     protected function logResultOf(?ApiResponse $apiResponse = null): ?ApiResponse {
-        if($apiResponse) {
+        if($apiResponse instanceof \NSWDPC\Utilities\Cloudflare\ApiResponse) {
             $results = $apiResponse->getAllResults();
             if($results != []) {
 
                 // Log results at expected levels
-                array_walk($results, function($result, $key) {
+                array_walk($results, function($result, $key): void {
                     $level = $result == "success" ? "INFO" : "NOTICE";
                     Logger::log("CloudflarePurgeService: {$key}={$result}", $level);
                 });
@@ -465,9 +462,11 @@ class CloudflarePurgeService {
                         if(isset($results['success'])) {
                             $response->addHeader("X-CF-Purge-Success", $results['success']);
                         }
+
                         if(isset($results['exception'])) {
                             $response->addHeader("X-CF-Purge-Exception", $results['exception']);
                         }
+
                         if(isset($results['error'])) {
                             $response->addHeader("X-CF-Purge-Error", $results['error']);
                         }
@@ -475,6 +474,7 @@ class CloudflarePurgeService {
                 }
             }
         }
+
         return $apiResponse;
     }
 

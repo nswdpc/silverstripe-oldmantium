@@ -14,7 +14,7 @@ use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test publish/unpublish events on versioned record
@@ -39,8 +39,8 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $urls = $record->getPurgeUrlList();
 
         $this->assertEquals(3, count($urls), "getPurgeUrlList count is not 2");
-        $this->assertTrue(array_search($record->AbsoluteLink(), $urls) !== false, "AbsoluteLink not found in getPurgeUrlList");
-        $this->assertTrue(array_search($record->SomeRelatedLink(), $urls) !== false, "SomeRelatedLink not found in getPurgeUrlList");
+        $this->assertTrue(in_array($record->AbsoluteLink(), $urls), "AbsoluteLink not found in getPurgeUrlList");
+        $this->assertTrue(in_array($record->SomeRelatedLink(), $urls), "SomeRelatedLink not found in getPurgeUrlList");
 
         $record->write();
         $record->publishSingle();
@@ -78,14 +78,14 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
     /**
      * Test record publishing
      */
-    public function testRecordPublish() {
+    public function testRecordPublish(): void {
         $this->createAndPublish("testRecordPublish");
     }
 
     /**
      * Test record publishing & unpublishing
      */
-    public function testRecordUnpublish() {
+    public function testRecordUnpublish(): void {
 
         $record = $this->createAndPublish("testRecordUnpublish");
 
@@ -121,7 +121,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
 
     }
 
-    public function testRecordDelete() {
+    public function testRecordDelete(): void {
 
         $record = $this->createAndPublish("testRecordDelete1");
         $record2 = $this->createAndPublish("testRecordDelete2");
@@ -159,7 +159,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
 
     }
 
-    public function testPurgePageNoBaseUrl() {
+    public function testPurgePageNoBaseUrl(): void {
         Config::modify()->set(Director::class, 'alternate_base_url', 'https://example.com/');
         Config::modify()->set( CloudflarePurgeService::class, 'base_url', '');
         $page = \Page::create([
@@ -169,13 +169,13 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgeRecord($page);
+        $this->client->purgeRecord($page);
         $data = MockApiClient::getLastRequestData();
         $expected = "https://example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 
-    public function testPurgePageWithBaseUrl() {
+    public function testPurgePageWithBaseUrl(): void {
         Config::modify()->set(Director::class, 'alternate_base_url', 'https://base.example.com/');
         Config::modify()->set( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
         $page = \Page::create([
@@ -185,17 +185,17 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgeRecord($page);
+        $this->client->purgeRecord($page);
         $data = MockApiClient::getLastRequestData();
         $expected = "https://another.example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 
-    public function testPurgeRecordWithPurgeUrlListMethod() {
+    public function testPurgeRecordWithPurgeUrlListMethod(): void {
         $record = TestPurgeUrlListRecord::create();
         $record->Title = 'TestPurgeUrlListRecord';
         $record->write();
-        $response = $this->client->purgeRecord($record);
+        $this->client->purgeRecord($record);
         $data = MockApiClient::getLastRequestData();
         $expected = [
             'https://example.com/TestPurgeUrlListRecord.html',

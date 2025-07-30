@@ -5,20 +5,20 @@ namespace NSWDPC\Utilities\Cloudflare;
 class ApiResult {
 
     protected $errors = [];
-    protected $messages = [];
-    protected $result = null;
-    protected $success = false;
 
-    protected $body = [];
+    protected $messages = [];
+
+    protected $result;
+
+    protected bool $success;
 
     protected ?\Exception $exception = null;// exceptions thown when handling the result
 
-    public function __construct(?object $result = null, array $body = []) {
+    public function __construct(?object $result = null, protected array $body = []) {
         $this->errors = $result->errors ?? [];
         $this->messages = $result->messages ?? [];
         $this->result = $result->result ?? null;
         $this->success = isset($result->success) && $result->success;
-        $this->body = $body;
     }
 
     public function getErrors() : array {

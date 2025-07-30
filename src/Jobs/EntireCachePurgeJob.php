@@ -20,8 +20,9 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
     /**
      * @inheritdoc
      */
+    #[\Override]
     public function getTitle() {
-        return _t(__CLASS__ . '.JOB_TITLE', 'CF Purge all in zone (WARNING!)');
+        return _t(self::class . '.JOB_TITLE', 'CF Purge all in zone (WARNING!)');
     }
 
     /**
@@ -33,10 +34,12 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
         if(!$client) {
             throw new \Exception("API client not available. Is enabled=true?");
         }
+
         $zoneId = $service->getZoneIdentifier();
         if(!$zoneId) {
             throw new \Exception("No zone_id found in configuration");
         }
+
         $this->addMessage("Cloudflare: purging all from zone");
         $response = $client->purgeEverything( $zoneId );
         if($response->allSuccess()) {
@@ -47,12 +50,14 @@ class EntireCachePurgeJob extends AbstractRecordCachePurgeJob
             $errors = $response->getErrors();
             throw new \Exception("Could not purge all in zone. Errors=" . json_encode($errors));
         }
+
         $this->isComplete = true;
     }
 
     /**
      * Do not do anything once this job is complete
      */
+    #[\Override]
     public function afterComplete() {}
 
 }

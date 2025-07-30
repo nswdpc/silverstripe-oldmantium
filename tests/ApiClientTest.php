@@ -4,7 +4,7 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\ApiClient;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test API client
@@ -18,7 +18,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
     /**
      * Validate successes are captured
      */
-    public function testRequestSuccess() {
+    public function testRequestSuccess(): void {
         $apiClient = $this->client->getAdapter();
         $urls = [
             'https://example.com/foo',
@@ -33,7 +33,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
     /**
      * Validate successes are captured
      */
-    public function testRequestExtraHeaders() {
+    public function testRequestExtraHeaders(): void {
         $apiClient = $this->client->getAdapter();
         $urls = [
             'https://example.com/foo',
@@ -59,7 +59,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
     /**
      * Validate successes are captured
      */
-    public function testRequestWithMultipleChunks() {
+    public function testRequestWithMultipleChunks(): void {
         $apiClient = $this->client->getAdapter();
         $max = 80;
         $final = 80 % ApiClient::CHUNK_SIZE;
@@ -68,6 +68,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         for($i=0;$i<80;$i++) {
             $urls[] = 'https://example.com/foo' . $i;
         }
+
         $apiClient->setIsMockError(false);
         $response = $apiClient->purgeUrls('test-zone-id', $urls);
         $this->assertTrue( $response->allSuccess() );
@@ -79,6 +80,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         foreach($results as $result) {
             $counts[] = count($result->getBody()['files']);
         }
+
         sort($counts);
         $expected = [ $final, ApiClient::CHUNK_SIZE , ApiClient::CHUNK_SIZE ];
 
@@ -88,7 +90,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
     /**
      * Validate errors are collected
      */
-    public function testRequestErrors() {
+    public function testRequestErrors(): void {
         $apiClient = $this->client->getAdapter();
         $urls = [
             'https://example.com/foo',
@@ -98,7 +100,7 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         $response = $apiClient->purgeUrls('test-zone-id', $urls);
         $this->assertFalse( $response->allSuccess() );
         $this->assertTrue( $response->hasErrors() );
-        $errors = $response->getErrors();
+        $response->getErrors();
     }
 
 }

@@ -21,8 +21,9 @@ class URLCachePurgeJob extends AbstractRecordCachePurgeJob
     /**
      * @inheritdoc
      */
-    public function getTitle() {
-        return parent::getTitle() . " - " . _t(__CLASS__ . '.JOB_TITLE', 'CF purge URL(s)');
+    #[\Override]
+    public function getTitle(): string {
+        return parent::getTitle() . " - " . _t(self::class . '.JOB_TITLE', 'CF purge URL(s)');
     }
 
     /**

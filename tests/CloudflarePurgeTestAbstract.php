@@ -31,7 +31,9 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
     protected $client;
 
     protected $enabled = true;
+
     protected $auth_token = "TOKEN-test-123-abcd";
+
     protected $zone_id = "test-zone";
 
     protected static $extra_dataobjects = [
@@ -51,6 +53,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
         ]
     ];
 
+    #[\Override]
     protected function setUp() : void {
         parent::setUp();
 
