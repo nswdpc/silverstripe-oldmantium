@@ -14,7 +14,6 @@
     "authors": [
         {
             "name": "James",
-            "homepage": "https://dpc.nsw.gov.au",
             "role": "Developer"
         }
     ],
@@ -27,8 +26,14 @@
         "symbiote/silverstripe-multivaluefield" : "^6"
     },
     "require-dev": {
+        "cambis/silverstripe-rector": "^2",
         "phpunit/phpunit": "^9.5",
-        "friendsofphp/php-cs-fixer": "^3"
+        "cambis/silverstan": "^2",
+        "nswdpc/ci-files": "dev-v-4",
+        "friendsofphp/php-cs-fixer": "^3",
+        "phpstan/phpstan": "^2",
+        "phpstan/phpstan-phpunit": "^2",
+        "rector/rector": "^2"
     },
     "autoload": {
       "psr-4": {
@@ -44,5 +49,11 @@
         ],
         "NSWDPC\\Utilities\\Cloudflare\\Tests\\": "tests/"
       }
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "silverstripe/vendor-plugin": true
+        }
     }
 }
