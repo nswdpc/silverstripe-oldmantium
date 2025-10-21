@@ -4,28 +4,26 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\DataObjectPurgeable;
 use NSWDPC\Utilities\Cloudflare\CloudflarePurgeService;
-use NSWDPC\Utilities\Cloudflare\Logger;
-use NSWDPC\Utilities\Cloudflare\PurgeRecord;
 use NSWDPC\Utilities\Cloudflare\URLCachePurgeJob;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
-use Symbiote\QueuedJobs\Services\QueuedJobService;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test publish/unpublish events on versioned record
  * @author James
  */
-class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
-
+class PublishUnpublishTest extends CloudflarePurgeTestAbstract
+{
     /**
      * Method used on publish and unpublish tests
      */
-    protected function createAndPublish(string $title) {
+    protected function createAndPublish(string $title)
+    {
 
         $record = TestVersionedRecord::create([
             'Title' => $title
@@ -39,14 +37,16 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $urls = $record->getPurgeUrlList();
 
         $this->assertEquals(3, count($urls), "getPurgeUrlList count is not 2");
-        $this->assertTrue(array_search($record->AbsoluteLink(), $urls) !== false, "AbsoluteLink not found in getPurgeUrlList");
-        $this->assertTrue(array_search($record->SomeRelatedLink(), $urls) !== false, "SomeRelatedLink not found in getPurgeUrlList");
+        $this->assertTrue(in_array($record->AbsoluteLink(), $urls), "AbsoluteLink not found in getPurgeUrlList");
+        $this->assertTrue(in_array($record->SomeRelatedLink(), $urls), "SomeRelatedLink not found in getPurgeUrlList");
 
         $record->write();
+        /* @phpstan-ignore method.notFound */
         $record->publishSingle();
 
         // test that a job was created for this record
-        $descriptors = $record->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
+        /* @phpstan-ignore method.notFound */
+        $descriptors = $record->getCurrentPurgeJobDescriptors([ URLCachePurgeJob::class ]);
         $this->assertEquals(1, $descriptors->count(), "Jobs count should be 1");
 
         $descriptor = $descriptors->first();
@@ -55,11 +55,11 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $this->assertEquals(DataObjectPurgeable::REASON_PUBLISH, $job_data->reason);
 
         $job = Injector::inst()->createWithArgs(
-                $descriptor->Implementation,
-                [
-                    DataObjectPurgeable::REASON_PUBLISH,
-                    $record
-                ]
+            $descriptor->Implementation,
+            [
+                DataObjectPurgeable::REASON_PUBLISH,
+                $record
+            ]
         );
 
         $job->setup();
@@ -70,7 +70,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $urls = $record->getPurgeUrlList();
         CloudflarePurgeService::removeReadingMode($urls);
 
-        $this->assertEquals( $urls, $data['options']['json']['files'], "Purged files sent in data does not match record getPurgeUrlList");
+        $this->assertEquals($urls, $data['options']['json']['files'], "Purged files sent in data does not match record getPurgeUrlList");
         return $record;
 
     }
@@ -78,21 +78,23 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
     /**
      * Test record publishing
      */
-    public function testRecordPublish() {
+    public function testRecordPublish(): void
+    {
         $this->createAndPublish("testRecordPublish");
     }
 
     /**
      * Test record publishing & unpublishing
      */
-    public function testRecordUnpublish() {
+    public function testRecordUnpublish(): void
+    {
 
         $record = $this->createAndPublish("testRecordUnpublish");
 
         $record->doUnPublish();
 
         // test that a job was created for this record reason = 'write'
-        $descriptors = $record->getCurrentPurgeJobDescriptors( [ URLCachePurgeJob::class ] );
+        $descriptors = $record->getCurrentPurgeJobDescriptors([ URLCachePurgeJob::class ]);
 
         $this->assertEquals(1, $descriptors->count(), "Jobs count should be 1");
 
@@ -102,11 +104,11 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $this->assertEquals(DataObjectPurgeable::REASON_UNPUBLISH, $job_data->reason);
 
         $job = Injector::inst()->createWithArgs(
-                $descriptor->Implementation,
-                [
-                    DataObjectPurgeable::REASON_UNPUBLISH,
-                    $record
-                ]
+            $descriptor->Implementation,
+            [
+                DataObjectPurgeable::REASON_UNPUBLISH,
+                $record
+            ]
         );
 
         $job->setup();
@@ -117,11 +119,12 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         $urls = $record->getPurgeUrlList();
         CloudflarePurgeService::removeReadingMode($urls);
 
-        $this->assertEquals( $urls, $data['options']['json']['files'], "Purged files sent in data does not match record getPurgeUrlList");
+        $this->assertEquals($urls, $data['options']['json']['files'], "Purged files sent in data does not match record getPurgeUrlList");
 
     }
 
-    public function testRecordDelete() {
+    public function testRecordDelete(): void
+    {
 
         $record = $this->createAndPublish("testRecordDelete1");
         $record2 = $this->createAndPublish("testRecordDelete2");
@@ -135,7 +138,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
             ]
         ]);
 
-        $this->assertEquals(2, $descriptors->count() );
+        $this->assertEquals(2, $descriptors->count());
 
         $record->delete();
 
@@ -148,7 +151,7 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
             ]
         ]);
 
-        $this->assertEquals(1, $descriptors->count() );
+        $this->assertEquals(1, $descriptors->count());
 
         // remaining descriptor
         $descriptor = $descriptors->first();
@@ -159,9 +162,10 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
 
     }
 
-    public function testPurgePageNoBaseUrl() {
+    public function testPurgePageNoBaseUrl(): void
+    {
         Config::modify()->set(Director::class, 'alternate_base_url', 'https://example.com/');
-        Config::modify()->set( CloudflarePurgeService::class, 'base_url', '');
+        Config::modify()->set(CloudflarePurgeService::class, 'base_url', '');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
@@ -169,15 +173,16 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgeRecord($page);
+        $this->client->purgeRecord($page);
         $data = MockApiClient::getLastRequestData();
         $expected = "https://example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 
-    public function testPurgePageWithBaseUrl() {
+    public function testPurgePageWithBaseUrl(): void
+    {
         Config::modify()->set(Director::class, 'alternate_base_url', 'https://base.example.com/');
-        Config::modify()->set( CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
+        Config::modify()->set(CloudflarePurgeService::class, 'base_url', 'https://another.example.com/');
         $page = \Page::create([
             'Title' => 'Test page 1',
             'URLSegment' => 'test-page-one',
@@ -185,17 +190,19 @@ class PublishUnpublishTest extends CloudflarePurgeTestAbstract {
         ]);
         $page->write();
 
-        $response = $this->client->purgeRecord($page);
+        $this->client->purgeRecord($page);
         $data = MockApiClient::getLastRequestData();
         $expected = "https://another.example.com/test-page-one";
         $this->assertEquals($expected, $data['options']['json']['files'][0]);
     }
 
-    public function testPurgeRecordWithPurgeUrlListMethod() {
+    public function testPurgeRecordWithPurgeUrlListMethod(): void
+    {
         $record = TestPurgeUrlListRecord::create();
         $record->Title = 'TestPurgeUrlListRecord';
         $record->write();
-        $response = $this->client->purgeRecord($record);
+
+        $this->client->purgeRecord($record);
         $data = MockApiClient::getLastRequestData();
         $expected = [
             'https://example.com/TestPurgeUrlListRecord.html',

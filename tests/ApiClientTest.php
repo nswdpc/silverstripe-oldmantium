@@ -4,7 +4,7 @@ namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use NSWDPC\Utilities\Cloudflare\ApiClient;
 
-require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
+require_once(__DIR__ . '/CloudflarePurgeTestAbstract.php');
 
 /**
  * Test API client
@@ -12,13 +12,13 @@ require_once(dirname(__FILE__) . '/CloudflarePurgeTestAbstract.php');
  */
 class ApiClientTest extends CloudflarePurgeTestAbstract
 {
-
     protected $usesDatabase = false;
 
     /**
      * Validate successes are captured
      */
-    public function testRequestSuccess() {
+    public function testRequestSuccess(): void
+    {
         $apiClient = $this->client->getAdapter();
         $urls = [
             'https://example.com/foo',
@@ -26,14 +26,15 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         ];
         $apiClient->setIsMockError(false);
         $response = $apiClient->purgeUrls('test-zone-id', $urls);
-        $this->assertTrue( $response->allSuccess() );
-        $this->assertFalse( $response->hasErrors() );
+        $this->assertTrue($response->allSuccess());
+        $this->assertFalse($response->hasErrors());
     }
 
     /**
      * Validate successes are captured
      */
-    public function testRequestExtraHeaders() {
+    public function testRequestExtraHeaders(): void
+    {
         $apiClient = $this->client->getAdapter();
         $urls = [
             'https://example.com/foo',
@@ -47,8 +48,8 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         ];
         $apiClient->setIsMockError(false);
         $response = $apiClient->purgeUrls('test-zone-id', $urls, $headers);
-        $this->assertTrue( $response->allSuccess() );
-        $this->assertFalse( $response->hasErrors() );
+        $this->assertTrue($response->allSuccess());
+        $this->assertFalse($response->hasErrors());
         $data = MockApiClient::getLastRequestData();
         $this->assertArrayHasKey('CF-Device-Type', $data['options']['headers']);
         $this->assertArrayHasKey('CF-IPCountry', $data['options']['headers']);
@@ -59,26 +60,29 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
     /**
      * Validate successes are captured
      */
-    public function testRequestWithMultipleChunks() {
+    public function testRequestWithMultipleChunks(): void
+    {
         $apiClient = $this->client->getAdapter();
         $max = 80;
         $final = 80 % ApiClient::CHUNK_SIZE;
-        $urls= [];
+        $urls = [];
         $chunks = ceil($max / ApiClient::CHUNK_SIZE);
-        for($i=0;$i<80;$i++) {
+        for ($i = 0;$i < 80;$i++) {
             $urls[] = 'https://example.com/foo' . $i;
         }
+
         $apiClient->setIsMockError(false);
         $response = $apiClient->purgeUrls('test-zone-id', $urls);
-        $this->assertTrue( $response->allSuccess() );
-        $this->assertFalse( $response->hasErrors() );
+        $this->assertTrue($response->allSuccess());
+        $this->assertFalse($response->hasErrors());
         $this->assertEquals($chunks, $response->getResultCount());
 
         $results = $response->getResults();
         $counts = [];
-        foreach($results as $result) {
+        foreach ($results as $result) {
             $counts[] = count($result->getBody()['files']);
         }
+
         sort($counts);
         $expected = [ $final, ApiClient::CHUNK_SIZE , ApiClient::CHUNK_SIZE ];
 
@@ -88,7 +92,8 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
     /**
      * Validate errors are collected
      */
-    public function testRequestErrors() {
+    public function testRequestErrors(): void
+    {
         $apiClient = $this->client->getAdapter();
         $urls = [
             'https://example.com/foo',
@@ -96,9 +101,9 @@ class ApiClientTest extends CloudflarePurgeTestAbstract
         ];
         $apiClient->setIsMockError(true);
         $response = $apiClient->purgeUrls('test-zone-id', $urls);
-        $this->assertFalse( $response->allSuccess() );
-        $this->assertTrue( $response->hasErrors() );
-        $errors = $response->getErrors();
+        $this->assertFalse($response->allSuccess());
+        $this->assertTrue($response->hasErrors());
+        $response->getErrors();
     }
 
 }

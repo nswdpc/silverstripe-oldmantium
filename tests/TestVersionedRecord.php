@@ -10,30 +10,34 @@ use SilverStripe\Versioned\Versioned;
 
 class TestVersionedRecord extends DataObject implements TestOnly
 {
-    private static $db = [
+    private static array $db = [
         'Title' => 'Varchar(255)'
     ];
 
-    private static $table_name = "TestVersionedRecord";
+    private static string $table_name = "TestVersionedRecord";
 
-    private static $extensions = [
+    private static array $extensions = [
         Versioned::class,
         DataObjectPurgeable::class
     ];
 
-    public function AbsoluteLink() {
+    public function AbsoluteLink(): string
+    {
         return "https://example.com/testversionedrecord.html";
     }
 
-    public function SomeRelatedLink() {
+    public function SomeRelatedLink(): string
+    {
         return "https://example.com/testversionedrecord.html?alternateformat=1";
     }
 
-    public function SomeReadingModeLink() {
+    public function SomeReadingModeLink(): string
+    {
         return "https://example.com/testversionedrecord.html?stage=Stage&format=html";
     }
 
-    public function getPurgeUrlList() {
+    public function getPurgeUrlList(): array
+    {
         return [
             $this->AbsoluteLink(),
             $this->SomeRelatedLink(),
@@ -44,7 +48,8 @@ class TestVersionedRecord extends DataObject implements TestOnly
     /**
      * This record has a URL that is support
      */
-    public function getPurgeTypes() : array {
+    public function getPurgeTypes(): array
+    {
         return [
             CloudflarePurgeService::TYPE_URL
         ];

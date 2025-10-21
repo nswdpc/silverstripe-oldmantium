@@ -2,51 +2,37 @@
 
 namespace NSWDPC\Utilities\Cloudflare;
 
-use GuzzleHttp\ClientInterface;
-use SilverStripe\Admin\LeftAndMain;
-use SilverStripe\Control\Controller;
-use SilverStripe\Control\HTTPResponse;
-
-class ApiClient {
-
+class ApiClient
+{
     public const HEADER_PURGE_REASON = 'X-Purge-Reason';
-
-    /**
-     * @var string
-     */
-    protected $apiToken = '';
-
-    /**
-     * @var ClientInterface
-     */
-    protected $client;
 
     /**
      * @var int
      */
-    const CHUNK_SIZE = 30;
+    public const CHUNK_SIZE = 30;
 
-    public function __construct(ClientInterface $client, string $apiToken) {
-        $this->apiToken = $apiToken;
-        $this->client = $client;
+    public function __construct(protected \GuzzleHttp\ClientInterface $client, protected string $apiToken)
+    {
     }
 
-    protected function getApiUrl(string $zoneId) : string {
-        $url = "https://api.cloudflare.com/client/v4/zones/{$zoneId}/purge_cache";
-        return $url;
+    protected function getApiUrl(string $zoneId): string
+    {
+        return "https://api.cloudflare.com/client/v4/zones/{$zoneId}/purge_cache";
     }
 
-    protected function getHeaders(array $extraHeaders = []) : array {
+    protected function getHeaders(array $extraHeaders = []): array
+    {
         $headers = [
             "Authorization" => "Bearer {$this->apiToken}",
             "Content-Type" => "application/json"
         ];
-        if(count($extraHeaders) > 0) {
+        if ($extraHeaders !== []) {
             $headers = array_merge(
                 $extraHeaders,
                 $headers
             );
         }
+
         return $headers;
     }
 
@@ -54,14 +40,13 @@ class ApiClient {
      * Get options for request.
      * See https://docs.guzzlephp.org/en/latest/request-options.html#json for json key usage
      */
-    protected function getOptions(array $headers, array $body) : array {
-        $options = [];
-        $options['headers'] = $headers;
-        $options['json'] = $body;
-        return $options;
+    protected function getOptions(array $headers, array $body): array
+    {
+        return ['headers' => $headers, 'json' => $body];
     }
 
-    protected function callApi(string $zoneId, array $body, array $extraHeaders = []) : ApiResult {
+    protected function callApi(string $zoneId, array $body, array $extraHeaders = []): ApiResult
+    {
         try {
             // Perform the API request and return a result as an ApiResult
             $headers = $this->getHeaders($extraHeaders);
@@ -80,11 +65,13 @@ class ApiClient {
             Logger::log("Cloudflare API client request error. " . $requestException->getMessage(), "NOTICE");
             try {
                 $decoded = null;
-                if($response = $requestException->getResponse()) {
+                if (($response = $requestException->getResponse()) instanceof \Psr\Http\Message\ResponseInterface) {
                     $result = $response->getBody()->getContents();
                     $decoded = json_decode($result, false, 512, JSON_THROW_ON_ERROR);
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception) {
+            }
+
             // store the result
             $result = new ApiResult($decoded);
             $result->setException($requestException);
@@ -94,50 +81,56 @@ class ApiClient {
             $result = new ApiResult();
             $result->setException($exception);
         }
+
         return $result;
     }
 
     /**
      * Get the response data as an ApiResponse object, which may contain multiple ApiResult objects
      */
-    protected function getPurgeResponse(string $zoneId, string $purgeType, array $values, array $extraHeaders = []) : ApiResponse {
+    protected function getPurgeResponse(string $zoneId, string $purgeType, array $values, array $extraHeaders = []): ApiResponse
+    {
         $chunks = array_chunk($values, self::CHUNK_SIZE);
         $response = new ApiResponse();
-        foreach($chunks as $chunk) {
+        foreach ($chunks as $chunk) {
             $body = [
                 $purgeType => $chunk
             ];
-            if($result = $this->callApi($zoneId, $body, $extraHeaders)) {
-                $response->addResult($result);
-            }
+            $result = $this->callApi($zoneId, $body, $extraHeaders);
+            $response->addResult($result);
         }
+
         return $response;
     }
 
-    public function purgeUrls(string $zoneId, array $urls, array $extraHeaders = []) : ApiResponse {
+    public function purgeUrls(string $zoneId, array $urls, array $extraHeaders = []): ApiResponse
+    {
         return $this->getPurgeResponse($zoneId, 'files', $urls, $extraHeaders);
     }
 
-    public function purgePrefixes(string $zoneId, array $prefixes, array $extraHeaders = []) : ApiResponse {
+    public function purgePrefixes(string $zoneId, array $prefixes, array $extraHeaders = []): ApiResponse
+    {
         return $this->getPurgeResponse($zoneId, 'prefixes', $prefixes, $extraHeaders);
     }
 
-    public function purgeTags(string $zoneId, array $tags, array $extraHeaders = []) : ApiResponse {
+    public function purgeTags(string $zoneId, array $tags, array $extraHeaders = []): ApiResponse
+    {
         return $this->getPurgeResponse($zoneId, 'tags', $tags, $extraHeaders);
     }
 
-    public function purgeHosts(string $zoneId, array $hosts, array $extraHeaders = []) : ApiResponse {
+    public function purgeHosts(string $zoneId, array $hosts, array $extraHeaders = []): ApiResponse
+    {
         return $this->getPurgeResponse($zoneId, 'hosts', $hosts, $extraHeaders);
     }
 
-    public function purgeEverything(string $zoneId) : ApiResponse {
+    public function purgeEverything(string $zoneId): ApiResponse
+    {
         $body = [
             'purge_everything' => true
         ];
         $response = new ApiResponse();
-        if($result = $this->callApi($zoneId, $body)) {
-            $response->addResult($result);
-        }
+        $result = $this->callApi($zoneId, $body);
+        $response->addResult($result);
         return $response;
     }
 
