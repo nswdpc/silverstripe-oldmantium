@@ -35,7 +35,7 @@ class PurgeURLTask extends BuildTask
 
             $urls = explode(",", $urls);
             $urlCount = count($urls);
-            if ($urlCount == 0) {
+            if ($urlCount === 0) {
                 throw new \Exception("Please provide a url parameter, with one or more URLs");
             }
 
