@@ -165,11 +165,11 @@ class CloudflarePurgeService
     public static function getAuthToken(): string
     {
         $token = Environment::getEnv("NSWDPC_CFPURGE_AUTHTOKEN");
-        if(is_string($token)) {
+        if (is_string($token)) {
             $token = trim($token);
         }
 
-        if($token === "") {
+        if ($token === "") {
             $token = trim(self::config()->get('auth_token'));
         }
 
