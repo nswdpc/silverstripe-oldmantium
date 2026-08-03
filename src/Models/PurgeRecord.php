@@ -4,7 +4,6 @@ namespace NSWDPC\Utilities\Cloudflare;
 
 use SilverStripe\Control\Director;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\ORM\ValidationException;
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Security\Permission;
 use SilverStripe\Security\PermissionProvider;
@@ -195,8 +194,8 @@ class PurgeRecord extends DataObject implements PermissionProvider
 
         $values = $this->getPurgeTypeValues($this->Type);
 
-        if (count($values) == 0 && $this->requiresTypeValue()) {
-            throw ValidationException::create(
+        if ($values === [] && $this->requiresTypeValue()) {
+            throw \SilverStripe\Core\Validation\ValidationException::create(
                 _t(self::class . '.PROVIDE_VALUES', 'Please provide one or more values')
             );
         }

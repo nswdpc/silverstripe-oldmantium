@@ -8,8 +8,7 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\DatetimeField;
 use SilverStripe\Forms\NumericField;
-use SilverStripe\ORM\ArrayList;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\Versioned\Versioned;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJobService;
@@ -20,9 +19,9 @@ use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
  * @author James
  * @property ?string $CachePurgeAt
  * @property float $CacheMaxAge
- * @extends \SilverStripe\ORM\DataExtension<(\NSWDPC\Utilities\Cloudflare\PurgeRecord & static)>
+ * @extends \SilverStripe\Core\Extension<(\NSWDPC\Utilities\Cloudflare\PurgeRecord & static)>
  */
-class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
+class DataObjectPurgeable extends Extension implements CloudflarePurgeable
 {
     /**
      * @var string
@@ -242,9 +241,9 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
     /**
      * Return QueuedJobDescriptor records linked to the owner record
      */
-    public function getCurrentPurgeJobDescriptors(array $implementations = []): ArrayList
+    public function getCurrentPurgeJobDescriptors(array $implementations = []): \SilverStripe\Model\List\ArrayList
     {
-        $list = ArrayList::create();
+        $list = \SilverStripe\Model\List\ArrayList::create();
         // ignore these status
         $statii = [
             QueuedJob::STATUS_RUN,
@@ -290,7 +289,6 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
     /**
      * Attempt to return the classname for the job linked to the purge type
      * @param string $type being one of the CloudflarePurgeService::TYPE_ constant values
-     * @return string|false
      */
     public static function getJobClassForType($type): string|false
     {
@@ -343,7 +341,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
      * Returns an array of QueuedJob instances queued successfull (not QueuedJobDescriptor) or false on error
      * @return array|false
      */
-    final public function createPurgeJobs($reason, \DateTime $start = null)
+    final public function createPurgeJobs($reason, \DateTime $start = null): false|array
     {
         try {
             $jobs_queued = [];

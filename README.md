@@ -44,10 +44,19 @@ Documentation: https://developers.cloudflare.com/api/get-started/create-token/
 1. Client IP Address filtering: restrict access to token
 1. TTL, if required
 
+Add the token to environment:
+
+```dotenv
+NSWDPC_CFPURGE_AUTHTOKEN='xxxxx'
+```
+
+Project configuration:
 ```yaml
+---
+Name: 'app-cloudflare'
+---
 NSWDPC\Utilities\Cloudflare\CloudflarePurgeService:
   enabled: true
-  auth_token: '<auth_token>'
   zone_id: '<zone_id>'
   # Optional, specify a URL to use instead of Director::baseURL()
   base_url: 'https://www.example.com/'

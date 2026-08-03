@@ -19,16 +19,16 @@
     ],
     "require": {
         "guzzlehttp/guzzle": "^7",
-        "silverstripe/assets": "^2",
-        "silverstripe/framework": "^5",
-        "silverstripe/cms": "^5",
-        "silverstripe/versioned" : "^2",
-        "symbiote/silverstripe-queuedjobs": "^5",
-        "symbiote/silverstripe-multivaluefield" : "^6"
+        "silverstripe/assets": "^3",
+        "silverstripe/framework": "^6",
+        "silverstripe/cms": "^6",
+        "silverstripe/versioned" : "^3",
+        "symbiote/silverstripe-queuedjobs": "^6",
+        "symbiote/silverstripe-multivaluefield" : "^7"
     },
     "require-dev": {
         "cambis/silverstripe-rector": "^2",
-        "phpunit/phpunit": "^9.5",
+        "phpunit/phpunit": "^11.5",
         "cambis/silverstan": "^2",
         "nswdpc/ci-files": "dev-v-4",
         "friendsofphp/php-cs-fixer": "^3",

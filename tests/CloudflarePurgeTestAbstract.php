@@ -9,6 +9,7 @@ use SilverStripe\Assets\File;
 use SilverStripe\Assets\Image;
 use SilverStripe\Assets\Dev\TestAssetStore;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ORM\DataObject;
@@ -64,7 +65,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
         Config::modify()->set(CloudflarePurgeService::class, 'enabled', $this->enabled);
 
         // Token based auth
-        Config::modify()->set(CloudflarePurgeService::class, 'auth_token', $this->auth_token);
+        Environment::setEnv('NSWDPC_CFPURGE_AUTHTOKEN', $this->auth_token);
 
         // Zone to purge
         Config::modify()->set(CloudflarePurgeService::class, 'zone_id', $this->zone_id);
@@ -132,7 +133,7 @@ abstract class CloudflarePurgeTestAbstract extends SapphireTest
         $this->assertEquals("http://localhost/client/v4/zones/{$this->client->getZoneIdentifier()}/purge_cache", $data['url'], "URI mismatch");
 
         $this->assertEquals(
-            "Bearer " . $this->client->config()->get('auth_token'),
+            "Bearer " . CloudflarePurgeService::getAuthToken(),
             $data['options']['headers']['Authorization']
         );
     }

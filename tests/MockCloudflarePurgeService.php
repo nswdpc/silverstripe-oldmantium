@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NSWDPC\Utilities\Cloudflare\Tests;
 
 use GuzzleHttp\Client as GuzzleHttpClient;
@@ -16,7 +18,7 @@ class MockCloudflarePurgeService extends CloudflarePurgeService implements TestO
     public function createApiClient(): ApiClient
     {
         $client = new GuzzleHttpClient();
-        $token = self::config()->get('auth_token');
+        $token = parent::getAuthToken();
         // when a new API client is created, clear the request history
         MockApiClient::clearRequestHistory();
         return new MockApiClient($client, $token);
