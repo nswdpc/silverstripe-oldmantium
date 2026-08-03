@@ -168,9 +168,11 @@ class CloudflarePurgeService
         if(is_string($token)) {
             $token = trim($token);
         }
+
         if($token === "") {
             $token = trim(self::config()->get('auth_token'));
         }
+
         return $token;
     }
 
