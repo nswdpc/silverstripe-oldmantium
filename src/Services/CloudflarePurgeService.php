@@ -8,6 +8,7 @@ use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Control\Director;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
@@ -158,12 +159,28 @@ class CloudflarePurgeService
     }
 
     /**
+     * Retrieve the auth token configured for purging
+     * Fall back to the configuration API for BC
+     */
+    public static function getAuthToken(): string
+    {
+        $token = Environment::getEnv("NSWDPC_CFPURGE_AUTHTOKEN");
+        if(is_string($token)) {
+            $token = trim($token);
+        }
+        if($token === "") {
+            $token = trim(self::config()->get('auth_token'));
+        }
+        return $token;
+    }
+
+    /**
      * Create a new API client
      */
     protected function createApiClient(): ApiClient
     {
         $client = new GuzzleHttpClient();
-        $token = self::config()->get('auth_token');
+        $token = static::getAuthToken();
         return new ApiClient($client, $token);
     }
 
