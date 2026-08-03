@@ -69,7 +69,7 @@ class PurgeURLTask extends BuildTask
     public function getOptions(): array
     {
         return [
-            new InputOption('url', null, InputOption::VALUE_NONE, 'URL(s) to purge in the configured zone. Separate multiple urls with a comma'),
+            new InputOption('url', null, InputOption::VALUE_REQUIRED, 'URL(s) to purge in the configured zone. Separate multiple urls with a comma'),
         ];
     }
 
