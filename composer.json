@@ -24,7 +24,7 @@
         "silverstripe/cms": "^6",
         "silverstripe/versioned" : "^3",
         "symbiote/silverstripe-queuedjobs": "^6",
-        "symbiote/silverstripe-multivaluefield" : "dev-7 || ^7"
+        "symbiote/silverstripe-multivaluefield" : "^7"
     },
     "require-dev": {
         "cambis/silverstripe-rector": "^2",
