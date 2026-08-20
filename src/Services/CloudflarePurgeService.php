@@ -37,7 +37,7 @@ class CloudflarePurgeService
      */
     private static bool $enabled = false;
 
-    private static string $api_token = '';
+    private static string $auth_token = '';
 
     private static string $zone_id = '';
 
