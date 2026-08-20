@@ -290,16 +290,14 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
     /**
      * Attempt to return the classname for the job linked to the purge type
      * @param string $type being one of the CloudflarePurgeService::TYPE_ constant values
-     * @return string|false
      */
     public static function getJobClassForType($type): string|false
     {
         $class = "NSWDPC\\Utilities\\Cloudflare\\{$type}CachePurgeJob";
         if (class_exists($class)) {
             return $class;
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -343,7 +341,7 @@ class DataObjectPurgeable extends DataExtension implements CloudflarePurgeable
      * Returns an array of QueuedJob instances queued successfull (not QueuedJobDescriptor) or false on error
      * @return array|false
      */
-    final public function createPurgeJobs($reason, \DateTime $start = null)
+    final public function createPurgeJobs($reason, \DateTime $start = null): false|array
     {
         try {
             $jobs_queued = [];

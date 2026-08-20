@@ -437,16 +437,16 @@ class CloudflarePurgeService
                 $urls = $object->getPurgeUrlList();
                 if (!is_array($urls)) {
                     throw new \InvalidArgumentException("Object with getPurgeUrlList method should return an array of urls from that method");
-                } else {
-                    return $this->logResultOf($this->purgeURLs($urls, $extraHeaders));
                 }
-            } elseif ($object instanceof SiteTree) {
-                return $this->logResultOf($this->purgePage($object, $extraHeaders));
-            } elseif ($object instanceof File) {
-                return $this->logResultOf($this->purgeFile($object, $extraHeaders));
-            } else {
-                throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
+                return $this->logResultOf($this->purgeURLs($urls, $extraHeaders));
             }
+            if ($object instanceof SiteTree) {
+                return $this->logResultOf($this->purgePage($object, $extraHeaders));
+            }
+            if ($object instanceof File) {
+                return $this->logResultOf($this->purgeFile($object, $extraHeaders));
+            }
+            throw new \InvalidArgumentException("Object should be a SiteTree, File or have a getPurgeUrlList method");
         } catch (\InvalidArgumentException $invalidArgumentException) {
             Logger::log("purgeRecord failed: " . $invalidArgumentException->getMessage(), "NOTICE");
         } catch (\Exception $exception) {

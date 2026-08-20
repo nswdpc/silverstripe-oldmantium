@@ -92,9 +92,8 @@ class PurgeRecord extends DataObject implements PermissionProvider
         $type = $type ?: $this->Type;
         if (!$type) {
             return _t(self::class . '.UNKNOWN', 'Unknown');
-        } else {
-            return _t(self::class . '.TYPE_' . strtoupper((string) $type), $type);
         }
+        return _t(self::class . '.TYPE_' . strtoupper((string) $type), $type);
     }
 
     #[\Override]
@@ -195,7 +194,7 @@ class PurgeRecord extends DataObject implements PermissionProvider
 
         $values = $this->getPurgeTypeValues($this->Type);
 
-        if (count($values) == 0 && $this->requiresTypeValue()) {
+        if (count($values) === 0 && $this->requiresTypeValue()) {
             throw ValidationException::create(
                 _t(self::class . '.PROVIDE_VALUES', 'Please provide one or more values')
             );

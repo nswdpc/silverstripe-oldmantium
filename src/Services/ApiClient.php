@@ -27,7 +27,7 @@ class ApiClient
             "Content-Type" => "application/json"
         ];
         if ($extraHeaders !== []) {
-            $headers = array_merge(
+            return array_merge(
                 $extraHeaders,
                 $headers
             );
