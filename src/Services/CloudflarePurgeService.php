@@ -192,6 +192,20 @@ class CloudflarePurgeService
     public function prepUrls(array $urls): array
     {
 
+        // Filter invalid values for urls
+        $urls = array_filter(
+            $urls,
+            function($url, $key) {
+                if(is_string($url)) {
+                   return true;
+                } else {
+                    Logger::log("prepUrls: dropping URL as not a string", "NOTICE");
+                    return false;
+                }
+            },
+            ARRAY_FILTER_USE_BOTH
+        );
+
         // Remove any reading mode added to the URL in query string
         static::removeReadingMode($urls);
 
