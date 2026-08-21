@@ -176,9 +176,9 @@ class CloudflarePurgeService
         // Filter invalid values for urls
         $urls = array_filter(
             $urls,
-            function($url, $key) {
-                if(is_string($url)) {
-                   return true;
+            function ($url, $key) {
+                if (is_string($url)) {
+                    return true;
                 } else {
                     Logger::log("prepUrls: dropping URL as not a string", "NOTICE");
                     return false;
